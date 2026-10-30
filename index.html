@@ -56,16 +56,31 @@
 </div></div>
 
 <!-- 収蔵品を加える -->
-<div class="sheet" id="add" hidden><form class="card" id="addForm" role="dialog" aria-modal="true" aria-labelledby="aHead" style="grid-template-columns:1fr">
-  <div><div class="no">収蔵品を加える</div><h2 id="aHead">本を手で入力する</h2></div>
-  <p class="soon">バーコードを読む・タイトルで探す方法は、次の段階で加えます。</p>
-  <div class="fields">
-    <label>題名<input id="aTitle" required autocomplete="off"></label>
+<div class="sheet" id="add" hidden><form class="card" id="addForm" role="dialog" aria-modal="true" aria-labelledby="aHead" style="grid-template-columns:1fr" novalidate>
+  <div><div class="no">収蔵品を加える</div><h2 id="aHead">本を登録する</h2></div>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" data-t="scan" aria-selected="true">バーコード</button>
+    <button type="button" role="tab" data-t="isbn" aria-selected="false">ISBN を入力</button>
+    <button type="button" role="tab" data-t="hand" aria-selected="false">手で入力</button>
+  </div>
+  <div class="tp" id="tpScan">
+    <div class="scanbox"><video id="scanVideo" playsinline muted></video><div class="scanline"></div></div>
+    <p class="soon" id="scanMsg">本の裏のバーコード（978 から始まる方）を、枠の中に入れてください。</p>
+  </div>
+  <div class="tp" id="tpIsbn" hidden>
+    <div class="fields"><label>ISBN（本の裏の 978 から始まる13けた）<input id="aIsbn" inputmode="numeric" autocomplete="off" placeholder="9784..."></label></div>
+    <div class="btns"><button type="button" id="isbnGo">さがす</button></div>
+  </div>
+  <p class="soon" id="foundMsg" hidden></p>
+  <div class="fields" id="bookFields">
+    <label>題名<input id="aTitle" autocomplete="off"></label>
     <label>作者<input id="aAuthor" autocomplete="off"></label>
     <div class="row2"><label>種類<select id="aFormat"></select></label><label>ページ数（わかれば）<input id="aPages" inputmode="numeric" autocomplete="off"></label></div>
     <label>出版社<input id="aPub" autocomplete="off"></label>
     <div><div style="font-size:11px;color:var(--label-sub);margin-bottom:6px">背表紙の色</div><div class="pal" id="aColors"></div></div>
+    <label class="check"><input type="checkbox" id="aGone"> もう手放した本（手放した本として本棚に入ります）</label>
   </div>
+  <p class="soon">タイトルで探す方法は、AI のサーバー（Step 3）と一緒に用意します。</p>
   <div class="btns"><button type="button" id="aClose">やめる</button><button type="submit" class="go">本棚に加える</button></div>
 </form></div>
 

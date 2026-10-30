@@ -1,7 +1,7 @@
 // 全体のつなぎ：展示室・照明・近づく・館内案内・作品解説
 import { getState, onChange, setLight, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
-import { openWork, closeWork, openAdd, initAdd } from './sheets.js';
+import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
 
 const $ = s => document.querySelector(s);
 const app = $('#app'), stage = $('#stage'), piece = $('#piece');
@@ -67,14 +67,15 @@ $('#rehangDone').onclick = () => toggleRehang(false);
 // 作品解説・収蔵品を加える
 $('#wClose').onclick = closeWork;
 $('#work').addEventListener('click', e => { if (e.target.id === 'work') closeWork(); });
-$('#aClose').onclick = () => { $('#add').hidden = true; };
-$('#add').addEventListener('click', e => { if (e.target.id === 'add') $('#add').hidden = true; });
+$('#aClose').onclick = closeAdd;
+$('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd(); });
 initAdd(title => toast(`「${title}」を本棚に加えました`));
 $('#emptyAdd').onclick = openAdd;
 $('#emptySample').onclick = () => { addSamples(); toast('見本の本を並べました。本棚から外すこともできます'); };
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  for (const id of ['work', 'add', 'menu']) if (!$('#' + id).hidden) { $('#' + id).hidden = true; return; }
+  if (!$('#add').hidden) { closeAdd(); return; }
+  for (const id of ['work', 'menu']) if (!$('#' + id).hidden) { $('#' + id).hidden = true; return; }
   if (zoom) setZoom(false);
 });
 
