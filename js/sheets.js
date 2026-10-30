@@ -83,7 +83,7 @@ function endScan() { if (stopScan) { stopScan(); stopScan = null; } }
 async function found(raw) {
   const isbn = normalizeIsbn(raw);
   const msg = $('#foundMsg');
-  msg.hidden = false;
+  $('#found').hidden = false;
   if (!isbn) { msg.textContent = 'ISBN の番号が正しくないようです。もう一度確かめてください。'; return; }
   if (getState().books.some(b => b.isbn === isbn)) { msg.textContent = 'この本は、もう本棚にあります。'; }
   else msg.textContent = '本の情報をさがしています…';
@@ -102,7 +102,7 @@ export function openAdd() {
   $('#addForm').reset();
   pick = COLORS[0]; foundIsbn = '';
   palette();
-  $('#foundMsg').hidden = true;
+  $('#found').hidden = true;
   $('#add').hidden = false;
   tab('scan');
 }
@@ -113,11 +113,18 @@ export function initAdd(onAdded) {
   sel.value = 'shiroku';
   document.querySelectorAll('#add .tabs button').forEach(b => b.onclick = () => tab(b.dataset.t));
   $('#isbnGo').onclick = () => found($('#aIsbn').value);
+  $('#rescan').onclick = () => {
+    for (const id of ['aTitle', 'aAuthor', 'aPub', 'aPages', 'aIsbn']) $('#' + id).value = '';
+    $('#aFormat').value = 'shiroku'; $('#aGone').checked = false; foundIsbn = '';
+    $('#found').hidden = true;
+    const t = document.querySelector('#add .tabs [aria-selected="true"]').dataset.t;
+    tab(t === 'hand' ? 'scan' : t);
+  };
   $('#aIsbn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); found($('#aIsbn').value); } });
   $('#addForm').addEventListener('submit', e => {
     e.preventDefault();
     const title = $('#aTitle').value.trim();
-    if (!title) { $('#foundMsg').hidden = false; $('#foundMsg').textContent = '題名を入れてください。'; $('#aTitle').focus(); return; }
+    if (!title) { $('#found').hidden = false; $('#foundMsg').textContent = '題名を入れてください。'; $('#aTitle').focus(); return; }
     const pages = parseInt($('#aPages').value, 10);
     addBook({
       title, author: $('#aAuthor').value.trim(), publisher: $('#aPub').value.trim(), isbn: foundIsbn || undefined,
