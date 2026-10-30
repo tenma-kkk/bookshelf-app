@@ -4,8 +4,83 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#ecebe7">
 <title>本棚</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#ecebe7;color:#26231f;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.2em}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="styles.css">
 </head>
-<body><p>準備中</p></body>
+<body>
+<div class="app" id="app">
+  <div class="top">
+    <div class="mark" id="mark"></div>
+    <div class="icons">
+      <button type="button" class="ic" id="lightBtn" aria-label="照明を切り替える"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></button>
+      <button type="button" class="ic" id="menuBtn" aria-label="館内案内"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+
+  <div class="stage" id="stage"><div class="piece" id="piece"></div></div>
+
+  <div class="empty" id="empty" hidden>
+    <h2>まだ展示がありません</h2>
+    <p>本を加えると、この本棚に並びます。<br>まずは見本の本で試すこともできます。</p>
+    <button type="button" class="pill main" id="emptyAdd">収蔵品を加える</button>
+    <button type="button" class="pill" id="emptySample">見本の本を並べてみる</button>
+  </div>
+
+  <div class="hint" id="hint"></div>
+  <div class="plaque" id="plaque">
+    <div class="no" id="pNo"></div>
+    <div class="ttl" id="pTitle"></div>
+    <div class="mat" id="pMat"></div>
+    <div class="facts" id="pFacts"></div>
+  </div>
+  <div class="rehangBar" id="rehangBar" hidden>展示替え中<button type="button" id="rehangDone">終わる</button></div>
+</div>
+
+<!-- 作品解説 -->
+<div class="sheet" id="work" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+  <div class="cover" id="wCover"></div>
+  <div><div class="no" id="wNo"></div><h2 id="wTitle"></h2><div class="au" id="wAuthor"></div>
+    <dl><dt>種類</dt><dd id="wFmt"></dd><dt>大きさ</dt><dd id="wSize"></dd></dl></div>
+  <details class="mine full" id="wMine"><summary>わたしの記録 <small>自分だけに見えます</small></summary>
+    <div class="fields">
+      <div class="row2"><label>買った日<input id="r_bought" placeholder="例：2024年4月" autocomplete="off"></label>
+        <label>手放した日<input id="r_gone" placeholder="手放したときだけ" autocomplete="off"></label></div>
+      <label>買った場所<input id="r_place" placeholder="例：駅前の本屋" autocomplete="off"></label>
+      <label>本への思い<textarea id="r_memo" placeholder="この本の思い出など"></textarea></label>
+      <button type="button" class="danger" id="wDelete"></button>
+    </div>
+  </details>
+  <div class="btns full"><button type="button" id="wClose">展示にもどる</button></div>
+</div></div>
+
+<!-- 収蔵品を加える -->
+<div class="sheet" id="add" hidden><form class="card" id="addForm" role="dialog" aria-modal="true" aria-labelledby="aHead" style="grid-template-columns:1fr">
+  <div><div class="no">収蔵品を加える</div><h2 id="aHead">本を手で入力する</h2></div>
+  <p class="soon">バーコードを読む・タイトルで探す方法は、次の段階で加えます。</p>
+  <div class="fields">
+    <label>題名<input id="aTitle" required autocomplete="off"></label>
+    <label>作者<input id="aAuthor" autocomplete="off"></label>
+    <div class="row2"><label>種類<select id="aFormat"></select></label><label>ページ数（わかれば）<input id="aPages" inputmode="numeric" autocomplete="off"></label></div>
+    <label>出版社<input id="aPub" autocomplete="off"></label>
+    <div><div style="font-size:11px;color:var(--label-sub);margin-bottom:6px">背表紙の色</div><div class="pal" id="aColors"></div></div>
+  </div>
+  <div class="btns"><button type="button" id="aClose">やめる</button><button type="submit" class="go">本棚に加える</button></div>
+</form></div>
+
+<!-- 館内案内 -->
+<div class="menu" id="menu" hidden>
+  <button type="button" class="ic close" id="mClose" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <h3>館内案内</h3>
+  <button type="button" data-go="rehang"><b>展示替え</b><small>本の並べ替え</small></button>
+  <button type="button" data-go="add"><b>収蔵品を加える</b><small>本を登録する</small></button>
+  <button type="button" data-go="soon"><b>収蔵品目録</b><small>持ってる？チェック（準備中）</small></button>
+  <button type="button" data-go="soon"><b>展示室の設え</b><small>本棚・壁・床・小物（準備中）</small></button>
+  <button type="button" data-go="soon"><b>ほかの展示室へ</b><small>みんなの本棚（準備中）</small></button>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="js/app.js"></script>
+</body>
 </html>
