@@ -71,7 +71,7 @@
     <div class="fields"><label>ISBN（本の裏の 978 から始まる13けた）<input id="aIsbn" inputmode="numeric" autocomplete="off" placeholder="9784..."></label></div>
     <div class="btns"><button type="button" id="isbnGo">さがす</button></div>
   </div>
-  <p class="soon" id="foundMsg" hidden></p>
+  <div class="found" id="found" hidden><p id="foundMsg"></p><button type="button" id="rescan">読み直す</button></div>
   <div class="fields" id="bookFields">
     <label>題名<input id="aTitle" autocomplete="off"></label>
     <label>作者<input id="aAuthor" autocomplete="off"></label>
