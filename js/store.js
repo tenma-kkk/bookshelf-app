@@ -14,6 +14,7 @@ export const FORMATS = {
 // 厚さはページ数から計算する（表紙の厚み＋1ページあたり）。わからない本は種類ごとの標準
 const STD_PAGES = { bunko: 280, shinsho: 220, comic: 192, b6: 192, shiroku: 300, a5: 160 };
 export function thickness(book) {
+  if (book.w) return book.w;   // 写真から測った厚さ
   const pages = book.pages || STD_PAGES[book.format] || 250;
   return Math.round((2.2 + pages * 0.065) * 10) / 10;
 }
@@ -89,6 +90,10 @@ export function updateRecord(id, patch) {
 export function removeBook(id) {
   state.books = state.books.filter(x => x.id !== id);
   changed();
+}
+export function updateBook(id, patch) {
+  const b = state.books.find(x => x.id === id);
+  if (b) { Object.assign(b, patch); changed(); }
 }
 
 // 展示替え：from の本を、to の本の前（after=true なら後ろ）に動かす

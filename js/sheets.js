@@ -1,5 +1,6 @@
 // 作品解説（本をタップ）・わたしの記録（自分だけ）・収蔵品を加える（手で入力）
-import { FORMATS, thickness, getState, updateRecord, removeBook, addBook } from './store.js';
+import { FORMATS, thickness, getState, updateRecord, removeBook, addBook, updateBook } from './store.js';
+import { imageUrl, delImage } from './images.js';
 import { lookup, normalizeIsbn } from './lookup.js';
 import { startScan } from './scan.js';
 
@@ -13,14 +14,24 @@ export function openWork(id) {
   if (!b) return;
   const f = FORMATS[b.format] || FORMATS.shiroku;
   $('#wNo').textContent = `収蔵品 No.${String(i + 1).padStart(3, '0')}`;
-  $('#wTitle').textContent = b.title;
+  $('#wTitle').textContent = b.title || '（題名はまだ）';
   $('#wAuthor').textContent = [b.author, b.publisher].filter(Boolean).join('　');
-  $('#wFmt').textContent = f.name;
-  $('#wSize').textContent = `高さ ${f.h / 10}cm ・ 厚さ ${(thickness(b) / 10).toFixed(1)}cm`;
+  $('#wFmt').textContent = b.img ? '撮った本' : f.name;
+  $('#wSize').textContent = `高さ ${(b.h || f.h) / 10}cm ・ 厚さ ${(thickness(b) / 10).toFixed(1)}cm`;
   const cv = $('#wCover');
   cv.style.background = b.color || '#e9e4d8';
   cv.style.color = ink(b.color || '#e9e4d8');
-  cv.textContent = b.title;
+  cv.textContent = b.img ? '' : b.title;
+  cv.classList.toggle('spineView', !!b.img);
+  if (b.img) imageUrl(b.id).then(u => { if (u) cv.innerHTML = `<img src="${u}" alt="">`; });
+  // 撮った本は、題名と作者をあとから入れられる（Step 3 では AI が入れる）
+  const nm = $('#wName');
+  nm.hidden = !b.img;
+  if (b.img) {
+    $('#n_title').value = b.title || ''; $('#n_author').value = b.author || '';
+    $('#n_title').onchange = () => { updateBook(id, { title: $('#n_title').value.trim() }); $('#wTitle').textContent = $('#n_title').value.trim() || '（題名はまだ）'; };
+    $('#n_author').onchange = () => updateBook(id, { author: $('#n_author').value.trim() });
+  }
   // わたしの記録（自分の本棚のときだけ出る。ほかの人の本棚には入口ごと出さない）
   const r = b.record || {};
   $('#wMine').open = false;
@@ -34,6 +45,7 @@ export function openWork(id) {
   del.textContent = 'この本を本棚から外す';
   del.onclick = () => {
     if (del.dataset.step === '0') { del.dataset.step = '1'; del.textContent = 'もう一度押すと外します（記録も消えます）'; return; }
+    if (b.img) delImage(id).catch(() => {});
     removeBook(id); closeWork();
   };
   $('#work').hidden = false;
