@@ -24,7 +24,9 @@ function empty() {
   return {
     no: 1,
     since: new Date().getFullYear(),
-    shelf: { name: 'わたしの本棚', frame: '#f7f6f2', inner: '#f2cf1d', note: '白いわく・黄色の中' },
+    shelf: { name: 'わたしの本棚', preset: 'mine', mat: 'paint', frame: '#f7f6f2', inner: '#f2cf1d', top: 'same', brass: false },
+    room: { wall: 'gallery', floor: 'gallery' },
+    tops: ['🪴', '🐉'],
     light: 'day',
     books: [],
   };
@@ -35,7 +37,7 @@ let state = load();
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...empty(), ...JSON.parse(raw) };
+    if (raw) { const d = JSON.parse(raw), e = empty(); return { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room } }; }
   } catch (e) { /* 保存できない環境でも、空の本棚で動かす */ }
   return empty();
 }
@@ -51,6 +53,9 @@ function changed() { save(); listeners.forEach(fn => fn(state)); }
 export function getState() { return state; }
 
 export function setLight(light) { state.light = light; changed(); }
+export function setShelf(patch) { state.shelf = { ...state.shelf, ...patch }; changed(); }
+export function setRoom(patch) { state.room = { ...state.room, ...patch }; changed(); }
+export function setTops(tops) { state.tops = tops.slice(0, 4); changed(); }
 
 export function addBook(book) {
   const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
