@@ -1,5 +1,5 @@
 // 作品解説（本をタップ）・わたしの記録（自分だけ）・収蔵品を加える（手で入力）
-import { FORMATS, thickness, getState, updateRecord, removeBook, addBook, updateBook } from './store.js';
+import { FORMATS, thickness, getState, updateRecord, removeBook, addBook, updateBook, removeSamples } from './store.js';
 import { imageUrl, delImage } from './images.js';
 import { lookup, normalizeIsbn } from './lookup.js';
 import { startScan } from './scan.js';
@@ -138,6 +138,7 @@ export function initAdd(onAdded) {
     const title = $('#aTitle').value.trim();
     if (!title) { $('#found').hidden = false; $('#foundMsg').textContent = '題名を入れてください。'; $('#aTitle').focus(); return; }
     const pages = parseInt($('#aPages').value, 10);
+    removeSamples();   // 自分の本を入れたら、見本の本は外す
     addBook({
       title, author: $('#aAuthor').value.trim(), publisher: $('#aPub').value.trim(), isbn: foundIsbn || undefined,
       format: sel.value, pages: Number.isFinite(pages) && pages > 0 ? pages : null, color: pick,
