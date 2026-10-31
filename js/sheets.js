@@ -24,6 +24,17 @@ export function openWork(id) {
   cv.textContent = b.img ? '' : b.title;
   cv.classList.toggle('spineView', !!b.img);
   if (b.img) imageUrl(b.id).then(u => { if (u) cv.innerHTML = `<img src="${u}" alt="">`; });
+  // 描き直した本は、元の写真と見比べられる
+  const cmp = $('#wCompare');
+  cmp.hidden = !b.redrawn;
+  cmp.textContent = '写真と比べる';
+  cmp.onclick = async () => {
+    const showPhoto = cmp.textContent === '写真と比べる';
+    const u = await imageUrl(showPhoto ? b.id + '#photo' : b.id);
+    if (u) cv.innerHTML = `<img src="${u}" alt="">`;
+    cmp.textContent = showPhoto ? '描き直しにもどす' : '写真と比べる';
+  };
+  $('#wRetake').hidden = !b.retake;
   // 撮った本は、題名と作者をあとから入れられる（Step 3 では AI が入れる）
   const nm = $('#wName');
   nm.hidden = !b.img;
@@ -45,7 +56,7 @@ export function openWork(id) {
   del.textContent = 'この本を本棚から外す';
   del.onclick = () => {
     if (del.dataset.step === '0') { del.dataset.step = '1'; del.textContent = 'もう一度押すと外します（記録も消えます）'; return; }
-    if (b.img) delImage(id).catch(() => {});
+    if (b.img) { delImage(id).catch(() => {}); delImage(id + '#photo').catch(() => {}); }
     removeBook(id); closeWork();
   };
   $('#work').hidden = false;

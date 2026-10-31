@@ -2,6 +2,7 @@
 // 1段ごとに、自動で引いた本の境目を、違う所だけタップで直してから本棚に入れる。
 import { getState, setShelf, addBook, removeSamples } from './store.js';
 import { putImage } from './images.js';
+import { redrawSpine } from './redraw.js';
 
 const ROW_W = 560, PXMM = 4;   // 段の中の横幅（mm）と、切り出す細かさ（1mm あたりの点の数）
 const $ = s => document.querySelector(s);
@@ -279,8 +280,13 @@ async function saveRow() {
   const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const bk = S.colors ? hex(S.colors.inner) : mode(0, H * 0.12);
   const flr = S.colors ? hex(S.colors.inner) : mode(H * 0.9, H);
+  // 部屋の明かりの色を打ち消す：本棚全体で測った「わく」が白っぽければ、その白さを手がかりにする
+  let gain = [1, 1, 1];
+  if (S.colors) { const f = hex(S.colors.frame), l = f[0] * 0.3 + f[1] * 0.59 + f[2] * 0.11; if (l > 150) gain = [242 / f[0], 240 / f[1], 234 / f[2]].map(g => Math.max(0.7, Math.min(1.5, g))); }
   const xs = [0, ...ROW.cuts, W];
   for (let i = 1; i < xs.length; i++) {
+    $('#cpRowOk').textContent = `描き直しています… ${i}/${xs.length - 1}冊`;
+    await new Promise(r => setTimeout(r, 0));   // 進み具合を画面に出す
     const a = xs[i - 1], b = xs[i];
     if (b - a < 3 * PXMM) continue;
     let top = 0, run = 0;
@@ -294,10 +300,13 @@ async function saveRow() {
     if (bottom - top < H * 0.2) continue;   // 本のない、すき間
     const c = document.createElement('canvas'); c.width = b - a; c.height = bottom - top;
     c.getContext('2d').drawImage(canvas, a, top, b - a, bottom - top, 0, 0, b - a, bottom - top);
-    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.88));
+    const photo = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.88));
     const avg = avgColor(c.getContext('2d').getImageData(0, 0, c.width, c.height), () => true);
-    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((bottom - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, row: S.row + 1 });
-    await putImage(id, blob);
+    // 見本4のやり方で描き直す。うまく読めない本は、写真のまま入れて「近くで撮り直し」の印を付ける
+    const rd = redrawSpine(c, gain);
+    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((bottom - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, redrawn: !!rd.canvas, retake: rd.retake, row: S.row + 1 });
+    await putImage(id + '#photo', photo);
+    await putImage(id, rd.canvas ? await new Promise(ok => rd.canvas.toBlob(ok, 'image/png')) : photo);
     S.added++;
   }
 }
