@@ -29,12 +29,15 @@
     <button type="button" class="pill" id="emptySample">見本の本を並べてみる</button>
   </div>
 
-  <div class="hint" id="hintBox"><button type="button" class="zoomBtn" id="zoomBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path id="zoomPlus" d="M10.5 7.5v6M7.5 10.5h6"/></svg><span id="zoomLabel">近づいて見る</span></button><p id="hint"></p></div>
-  <div class="plaque" id="plaque">
-    <div class="no" id="pNo"></div>
-    <div class="ttl" id="pTitle"></div>
-    <div class="mat" id="pMat"></div>
-    <div class="facts" id="pFacts"></div>
+  <!-- 下の段：左に「近づいて見る」、右に説明札。重ならないように横に並べる -->
+  <div class="bottom">
+    <div class="hint" id="hintBox"><button type="button" class="zoomBtn" id="zoomBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path id="zoomPlus" d="M10.5 7.5v6M7.5 10.5h6"/></svg><span id="zoomLabel">近づいて見る</span></button><p id="hint"></p></div>
+    <div class="plaque" id="plaque">
+      <div class="no" id="pNo"></div>
+      <div class="ttl" id="pTitle"></div>
+      <div class="mat" id="pMat"></div>
+      <div class="facts" id="pFacts"></div>
+    </div>
   </div>
   <div class="rehangBar" id="rehangBar" hidden>展示替え中<button type="button" id="rehangDone">終わる</button></div>
 </div>
