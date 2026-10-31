@@ -29,7 +29,9 @@ function setZoom(on, x, y) {
   else stage.style.transform = '';
   app.classList.toggle('zoomed', on);
   $('#hint').textContent = rehang ? '本を長押しして、置きたい所まで動かします'
-    : on ? '本をタップすると作品解説。外をタップで離れます' : '本棚をタップすると近づきます';
+    : on ? '本をタップすると作品解説' : '本棚をタップしても近づけます';
+  $('#zoomLabel').textContent = on ? '離れる' : '近づいて見る';
+  $('#zoomPlus').setAttribute('d', on ? 'M7.5 10.5h6' : 'M10.5 7.5v6M7.5 10.5h6');
 }
 
 // 本棚をタップで近づく（もう一度で離れる）。近づいた状態で本をタップすると作品解説
@@ -43,6 +45,13 @@ stage.addEventListener('click', e => {
   setZoom(!zoom, e.clientX - r.left, e.clientY - r.top);
 });
 enableRehang(stage, () => rehang);
+// 近づいて見る／離れる ボタン（近づくのは、いちばん上の段のまん中）
+$('#zoomBtn').onclick = () => {
+  if (zoom) { setZoom(false); return; }
+  const row = piece.querySelector('.shelfRow'), r = stage.getBoundingClientRect();
+  const b = (row || piece).getBoundingClientRect();
+  setZoom(true, b.left + b.width / 2 - r.left, b.top + b.height / 2 - r.top);
+};
 
 // 照明（昼の展示室／夜の展示室）
 $('#lightBtn').onclick = () => setLight(getState().light === 'night' ? 'day' : 'night');

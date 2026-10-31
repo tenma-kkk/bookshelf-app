@@ -29,7 +29,7 @@
     <button type="button" class="pill" id="emptySample">見本の本を並べてみる</button>
   </div>
 
-  <div class="hint" id="hint"></div>
+  <div class="hint" id="hintBox"><button type="button" class="zoomBtn" id="zoomBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path id="zoomPlus" d="M10.5 7.5v6M7.5 10.5h6"/></svg><span id="zoomLabel">近づいて見る</span></button><p id="hint"></p></div>
   <div class="plaque" id="plaque">
     <div class="no" id="pNo"></div>
     <div class="ttl" id="pTitle"></div>
@@ -88,7 +88,7 @@
 <!-- 展示室の設え（本棚を見ながら変えられるよう、札は低め） -->
 <div class="sheet peek" id="design" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="dHead" style="grid-template-columns:1fr">
   <div><div class="no">展示室の設え</div><h2 id="dHead">本棚と展示室を整える</h2></div>
-  <div class="tabs" role="tablist"><button type="button" role="tab" data-t="shelf">本棚</button><button type="button" role="tab" data-t="room">壁と床</button><button type="button" role="tab" data-t="tops">小物</button></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" data-t="shelf">本棚</button><button type="button" role="tab" data-t="room">壁と床</button></div>
   <div id="dBody"></div>
   <div class="btns"><button type="button" class="go" id="dClose">これで飾る</button></div>
 </div></div>
@@ -108,7 +108,7 @@
   <button type="button" data-go="rehang"><b>展示替え</b><small>本の並べ替え</small></button>
   <button type="button" data-go="add"><b>収蔵品を加える</b><small>本を登録する</small></button>
   <button type="button" data-go="catalog"><b>収蔵品目録</b><small>探す・持ってる？・ほしい本</small></button>
-  <button type="button" data-go="design"><b>展示室の設え</b><small>本棚・壁・床・小物</small></button>
+  <button type="button" data-go="design"><b>展示室の設え</b><small>本棚・壁・床</small></button>
   <button type="button" data-go="soon"><b>ほかの展示室へ</b><small>みんなの本棚（準備中）</small></button>
   <button type="button" data-go="keep"><b>保管と引き継ぎ</b><small>バックアップ</small></button>
 </div>

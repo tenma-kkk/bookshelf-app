@@ -26,7 +26,6 @@ function empty() {
     since: new Date().getFullYear(),
     shelf: { name: 'わたしの本棚', preset: 'mine', mat: 'paint', frame: '#f7f6f2', inner: '#f2cf1d', top: 'same', brass: false },
     room: { wall: 'gallery', floor: 'gallery' },
-    tops: ['🪴', '🐉'],
     wish: [],
     light: 'day',
     books: [],
@@ -56,7 +55,6 @@ export function getState() { return state; }
 export function setLight(light) { state.light = light; changed(); }
 export function setShelf(patch) { state.shelf = { ...state.shelf, ...patch }; changed(); }
 export function setRoom(patch) { state.room = { ...state.room, ...patch }; changed(); }
-export function setTops(tops) { state.tops = tops.slice(0, 4); changed(); }
 
 // ほしい本（本人だけが見られる）
 export function addWish(item) { if (!state.wish.some(w => w.isbn === item.isbn)) { state.wish.push({ ...item, at: Date.now() }); changed(); } }
