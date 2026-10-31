@@ -45,7 +45,8 @@ export function render(piece, area) {
   const rows = layout(st.books);
   const fwMm = 18, bhMm = 16;
   const totalH = rows.length * (SHELF.rowH + bhMm) + fwMm * 3;
-  const s = Math.min((area.w - 48) / (SHELF.inner + fwMm * 2), (area.h * 0.64) / totalH);
+  // 最初から本棚全体が大きく映る大きさ（上のボタン・下の「近づいて見る」の分をあける）
+  const s = Math.min((area.w - 24) / (SHELF.inner + fwMm * 2), (area.h - 150) / totalH);
   const fw = fwMm * s;
   piece.innerHTML = '';
   const c = document.createElement('div');
