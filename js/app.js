@@ -3,6 +3,7 @@ import { getState, onChange, setLight, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
 import { noteOf, applyRoom, openDesign, closeDesign, initDesign } from './design.js';
+import { openCatalog, closeCatalog, initCatalog } from './catalog.js';
 
 const $ = s => document.querySelector(s);
 const app = $('#app'), stage = $('#stage'), piece = $('#piece');
@@ -57,6 +58,8 @@ menu.addEventListener('click', e => {
   if (go.dataset.go === 'rehang') toggleRehang(true);
   if (go.dataset.go === 'add') openAdd();
   if (go.dataset.go === 'design') openDesign();
+  if (go.dataset.go === 'catalog') openCatalog('find');
+  if (go.dataset.go === 'keep') openCatalog('keep');
   if (go.dataset.go === 'soon') toast('この部屋は、まだ準備中です');
 });
 function toggleRehang(on) {
@@ -74,12 +77,25 @@ $('#aClose').onclick = closeAdd;
 $('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd(); });
 initAdd(title => toast(`「${title}」を本棚に加えました`));
 initDesign();
+// 目録で選んだ本まで近づいて、光らせる
+initCatalog(id => {
+  setZoom(false);
+  requestAnimationFrame(() => {
+    const el = piece.querySelector(`.bk[data-id="${id}"]`);
+    if (!el) return;
+    const r = stage.getBoundingClientRect(), b = el.getBoundingClientRect();
+    setZoom(true, b.left + b.width / 2 - r.left, b.top + b.height / 2 - r.top);
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 2200);
+  });
+});
 $('#design').addEventListener('click', e => { if (e.target.id === 'design') closeDesign(); });
 $('#emptyAdd').onclick = openAdd;
 $('#emptySample').onclick = () => { addSamples(); toast('見本の本を並べました。本棚から外すこともできます'); };
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (!$('#add').hidden) { closeAdd(); return; }
+  if (!$('#catalog').hidden) { closeCatalog(); return; }
   for (const id of ['work', 'menu', 'design']) if (!$('#' + id).hidden) { $('#' + id).hidden = true; return; }
   if (zoom) setZoom(false);
 });

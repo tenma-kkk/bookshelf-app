@@ -27,6 +27,7 @@ function empty() {
     shelf: { name: 'わたしの本棚', preset: 'mine', mat: 'paint', frame: '#f7f6f2', inner: '#f2cf1d', top: 'same', brass: false },
     room: { wall: 'gallery', floor: 'gallery' },
     tops: ['🪴', '🐉'],
+    wish: [],
     light: 'day',
     books: [],
   };
@@ -56,6 +57,22 @@ export function setLight(light) { state.light = light; changed(); }
 export function setShelf(patch) { state.shelf = { ...state.shelf, ...patch }; changed(); }
 export function setRoom(patch) { state.room = { ...state.room, ...patch }; changed(); }
 export function setTops(tops) { state.tops = tops.slice(0, 4); changed(); }
+
+// ほしい本（本人だけが見られる）
+export function addWish(item) { if (!state.wish.some(w => w.isbn === item.isbn)) { state.wish.push({ ...item, at: Date.now() }); changed(); } }
+export function removeWish(isbn) { state.wish = state.wish.filter(w => w.isbn !== isbn); changed(); }
+
+// バックアップ：書き出し・読み込み（読み込むと、いまの中身を置きかえる）
+export function exportData() { return JSON.stringify({ app: 'bookshelf', version: 1, savedAt: new Date().toISOString(), data: state }, null, 1); }
+export function importData(text) {
+  const j = JSON.parse(text);
+  const d = j && j.app === 'bookshelf' ? j.data : null;
+  if (!d || !Array.isArray(d.books)) throw new Error('format');
+  const e = empty();
+  state = { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room }, wish: d.wish || [] };
+  changed();
+  return state.books.length;
+}
 
 export function addBook(book) {
   const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
