@@ -24,8 +24,8 @@ function showIntro() {
   const all = S.phase === 'all';
   $('#cpStep').textContent = all ? '本棚全体' : `${S.row + 1}段目 / ${S.rows}段`;
   $('#cpHead').textContent = all ? 'まず、本棚全体を撮ります' : `${S.row + 1}段目を撮ります`;
-  $('#cpText').textContent = all ? '本棚の外側のわくが、枠にぴったり入るように正面から撮ってください。わくの色・中の色・段の数を読み取ります。'
-    : 'スマホを横向きにして、棚板の上と下を枠の線に合わせてください。まっすぐになると、自動でシャッターが切れます。';
+  $('#cpText').textContent = all ? '本棚の外側のわくが、だいたい枠に入るように正面から撮ってください。ぴったりでなくても大丈夫です。わくの色・中の色・段の数を読み取ります。'
+    : 'スマホを横向きにして、棚板の上と下が、だいたい枠の線のあたりに来るようにしてください。ぴったりでなくても、撮ったあとに本当の位置に合わせ直します。シャッターを押しても撮れます。';
   $('#cpGo').textContent = all ? '本棚全体を撮る' : `${S.row + 1}段目を撮る`;
   $('#cpSkip').hidden = all;
 }
@@ -92,8 +92,9 @@ function probeEdges(v) {
   if (x1 - x0 < 20 || y1 - y0 < 10) return false;
   const rg = y => { if (y < 1 || y >= PH - 1) return 0; let s = 0, n = 0; for (let x = x0; x <= x1; x += 2) { s += Math.abs(Lm(x, y + 1) - Lm(x, y - 1)); n++; } return s / n; };
   let base = 0, bn = 0; for (let y = y0 + 4; y < y1 - 4; y += 3) { base += rg(y); bn++; } base /= Math.max(1, bn);
-  const band = Math.max(3, Math.round((y1 - y0) * 0.06)), best = yc => { let m = 0; for (let y = yc - band; y <= yc + band; y++) m = Math.max(m, rg(y)); return m; };
-  const thr = Math.max(9, base * 1.8);
+  // 枠の線の上下 12% の中に境目があればよい（ぴったりでなくてよい。あとで本当の位置に合わせ直す）
+  const band = Math.max(4, Math.round((y1 - y0) * 0.12)), best = yc => { let m = 0; for (let y = yc - band; y <= yc + band; y++) m = Math.max(m, rg(y)); return m; };
+  const thr = Math.max(8, base * 1.5);
   return best(y0) > thr && best(y1) > thr;
 }
 function loop(t) {
@@ -104,7 +105,7 @@ function loop(t) {
   const cam = $('#cp_cam');
   let lvl = null;
   if (tilt) {
-    lvl = Math.abs(tilt.pitch) < 4 && Math.abs(tilt.rot) < 3;
+    lvl = Math.abs(tilt.pitch) < 8 && Math.abs(tilt.rot) < 6;
     const cl = a => Math.max(-24, Math.min(24, a * 3));
     $('#cpBubble').style.transform = `translate(${cl(tilt.rot)}px,${cl(-tilt.pitch)}px)`;
   }
@@ -113,10 +114,10 @@ function loop(t) {
   cam.classList.toggle('ready', ready);
   cam.classList.toggle('tilted', lvl === false);
   $('#cpMsg').textContent = lvl === false ? 'スマホをまっすぐに（緑の丸をまん中へ）'
-    : !edgeOK ? (S.phase === 'all' ? '本棚の外側のわくを、枠に合わせてください' : '棚板の上と下を、枠の線に合わせてください') : 'そのまま動かさないで…';
+    : !edgeOK ? (S.phase === 'all' ? '本棚のわくを、だいたい枠に入れてください' : '棚板の上と下を、だいたい枠の線に') : 'そのまま…';
   if (ready) {
     if (!holdStart) holdStart = t;
-    const p = Math.min(1, (t - holdStart) / 900);
+    const p = Math.min(1, (t - holdStart) / 550);
     $('#cpArc').setAttribute('stroke-dasharray', `${p * 214} 214`);
     if (p >= 1) { holdStart = 0; shoot(); }
   } else { holdStart = 0; $('#cpArc').setAttribute('stroke-dasharray', '0 214'); }
@@ -130,8 +131,34 @@ function shoot() {
   c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
   stopCam();
   const src = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height);
-  const quad = q.map(([x, y]) => [Math.max(0, Math.min(c.width, x * k)), Math.max(0, Math.min(c.height, y * k))]);
+  const quad = refine(src, q.map(([x, y]) => [Math.max(0, Math.min(c.width, x * k)), Math.max(0, Math.min(c.height, y * k))]));
   setTimeout(() => S.phase === 'all' ? resultAll(src, quad) : resultRow(src, quad), 30);
+}
+
+// ---- 撮ったあとの合わせ直し ----
+// 枠の上下の線のまわり（枠の高さの ±12%）で、横一直線にいちばんくっきりした境目（棚板・わくのふち）を探し、
+// そこを本当の上下の端にする。本棚全体のときは、左右のわくのふちも同じように探す
+function refine(src, q) {
+  const { width: W, height: H, data: d } = src;
+  const Lm = (x, y) => { const i = (y * W + x) * 4; return d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; };
+  const x0 = Math.max(1, Math.round(Math.min(q[0][0], q[3][0]))), x1 = Math.min(W - 2, Math.round(Math.max(q[1][0], q[2][0])));
+  const y0 = Math.round((q[0][1] + q[1][1]) / 2), y1 = Math.round((q[3][1] + q[2][1]) / 2), fh = y1 - y0, fw = x1 - x0;
+  const rowEdge = y => { if (y < 2 || y >= H - 2) return 0; let s = 0, n = 0; for (let x = x0 + fw * 0.1; x < x1 - fw * 0.1; x += 3) { const xi = x | 0; s += Math.abs(Lm(xi, y + 2) - Lm(xi, y - 2)); n++; } return s / Math.max(1, n); };
+  const colEdge = x => { if (x < 2 || x >= W - 2) return 0; let s = 0, n = 0; for (let y = y0 + fh * 0.1; y < y1 - fh * 0.1; y += 3) { const yi = y | 0; s += Math.abs(Lm(x + 2, yi) - Lm(x - 2, yi)); n++; } return s / Math.max(1, n); };
+  // くっきりしていて、しかも枠の線に近い境目を選ぶ（遠くの別の棚板を拾わないように）
+  const near = (c, r, f, unit) => {
+    let best = c, bs = 0, base = 0, n = 0;
+    for (let v = c - r; v <= c + r; v += 2) { const e = f(v); base += e; n++; const sc = e / (1 + Math.abs(v - c) / unit); if (sc > bs) { bs = sc; best = v; } }
+    return f(best) > (base / n) * 1.6 ? best : c;
+  };
+  const ny0 = S.phase === 'all' ? near(y0, Math.round(fh * 0.12), rowEdge, fh * 0.04) : near(y0, Math.round(fh * 0.12), rowEdge, fh * 0.04);
+  // 1段のときの下の端は、少し下まで広げて撮る（本の下が切れないように）。棚板の分は、1冊ずつ切り出すときに取りのぞく
+  const ny1 = S.phase === 'all' ? near(y1, Math.round(fh * 0.12), rowEdge, fh * 0.04) : Math.min(H - 1, Math.round(y1 + fh * 0.08));
+  let nx0 = x0, nx1 = x1;
+  if (S.phase === 'all') { nx0 = near(x0, Math.round(fw * 0.1), colEdge, fw * 0.04); nx1 = near(x1, Math.round(fw * 0.1), colEdge, fw * 0.04); }
+  if (ny1 - ny0 < fh * 0.6 || nx1 - nx0 < fw * 0.6) return q;   // 見つからなければ、枠のまま
+  const dy0 = ny0 - y0, dy1 = ny1 - y1, dx0 = nx0 - x0, dx1 = nx1 - x1;
+  return [[q[0][0] + dx0, q[0][1] + dy0], [q[1][0] + dx1, q[1][1] + dy0], [q[2][0] + dx1, q[2][1] + dy1], [q[3][0] + dx0, q[3][1] + dy1]];
 }
 
 // ---- ゆがみ直し ----
@@ -240,8 +267,16 @@ function tapLines(e) {
 async function saveRow() {
   const { img, canvas, W, H } = ROW, d = img.data;
   const px = (x, y) => { const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2]]; }, dd = (p, q) => Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) + Math.abs(p[2] - q[2]);
-  const back = []; for (let x = 0; x < W; x += 7) for (let y = 4; y < H * 0.04; y += 2) back.push(px(x, y));
-  const bk = [0, 1, 2].map(k => back.map(c => c[k]).sort((a, b) => a - b)[back.length >> 1]);
+  // 本のうしろ（背板）と棚板の色：本棚全体を撮っていれば、そのときの「中の色」。なければ、上と下の帯でいちばん多い色
+  const mode = (y0, y1) => {
+    const h = new Map();
+    for (let y = Math.max(0, y0 | 0); y < Math.min(H, y1); y += 3) for (let x = 0; x < W; x += 5) { const c = px(x, y), k = (c[0] >> 4) * 256 + (c[1] >> 4) * 16 + (c[2] >> 4); h.set(k, (h.get(k) || 0) + 1); }
+    let bestK = 0, bn = -1; for (const [k, n] of h) if (n > bn) { bn = n; bestK = k; }
+    return [(bestK >> 8) * 16 + 8, ((bestK >> 4) & 15) * 16 + 8, (bestK & 15) * 16 + 8];
+  };
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const bk = S.colors ? hex(S.colors.inner) : mode(0, H * 0.12);
+  const flr = S.colors ? hex(S.colors.inner) : mode(H * 0.9, H);
   const xs = [0, ...ROW.cuts, W];
   for (let i = 1; i < xs.length; i++) {
     const a = xs[i - 1], b = xs[i];
@@ -249,12 +284,17 @@ async function saveRow() {
     let top = 0, run = 0;
     const ca = a + Math.round((b - a) * 0.25), cb = Math.max(ca + 1, b - Math.round((b - a) * 0.25));
     for (let y = 0; y < H * 0.7; y += 2) { let n = 0, c = 0; for (let x = ca; x < cb; x += 2) { if (dd(px(x, y), bk) > 60) n++; c++; } if (n / c > 0.6) { if (++run >= 3) { top = Math.max(0, y - 6); break; } } else run = 0; }
-    if (H - top < H * 0.2) continue;   // 本のない、すき間
-    const c = document.createElement('canvas'); c.width = b - a; c.height = H - top;
-    c.getContext('2d').drawImage(canvas, a, top, b - a, H - top, 0, 0, b - a, H - top);
+    // 下の端：段のいちばん下（棚板）の色から、本の色に変わる所
+    let bottom = H;
+    const fl = flr;
+    run = 0;
+    for (let y = H - 1; y > H * 0.5; y -= 2) { let n = 0, c = 0; for (let x = ca; x < cb; x += 2) { if (dd(px(x, y), fl) > 60) n++; c++; } if (n / c > 0.6) { if (++run >= 3) { bottom = Math.min(H, y + 6 + 4); break; } } else run = 0; }
+    if (bottom - top < H * 0.2) continue;   // 本のない、すき間
+    const c = document.createElement('canvas'); c.width = b - a; c.height = bottom - top;
+    c.getContext('2d').drawImage(canvas, a, top, b - a, bottom - top, 0, 0, b - a, bottom - top);
     const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.88));
     const avg = avgColor(c.getContext('2d').getImageData(0, 0, c.width, c.height), () => true);
-    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((H - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, row: S.row + 1 });
+    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((bottom - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, row: S.row + 1 });
     await putImage(id, blob);
     S.added++;
   }
@@ -283,4 +323,5 @@ export function initCapture() {
 }
 
 // 確かめ用：カメラなしで、写真から1段の画面を出す（パソコンでの確認に使う）
-export function __testRow(src, quad) { $('#capture').hidden = false; S.phase = 'row'; S.row = 0; S.rows = 1; resultRow(src, quad); }
+export function __testRow(src, quad, fix) { $("#capture").hidden = false; S.phase = "row"; S.row = 0; S.rows = 1; resultRow(src, fix ? refine(src, quad) : quad); }
+export const __refine = (src, quad, phase) => { S.phase = phase || "row"; return refine(src, quad); };
