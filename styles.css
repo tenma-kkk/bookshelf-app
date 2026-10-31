@@ -44,6 +44,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 /* 展示物（本棚） */
 .stage{position:absolute;inset:0;z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(20% + 48px);transition:transform .9s cubic-bezier(.45,.05,.2,1);touch-action:manipulation}
 .rehang .stage{touch-action:none}
+.stage{-webkit-user-select:none;user-select:none}
+.zoomed .stage{touch-action:none;cursor:grab}
+.stage.panning{transition:none;cursor:grabbing}
 .piece{position:relative;filter:drop-shadow(0 22px 22px rgba(0,0,0,.28))}
 .case{background:var(--frame);padding:var(--fw) var(--fw) 0;position:relative}
 .case .crown{position:absolute;left:-3px;right:-3px;top:calc(var(--fw)*-.5);height:calc(var(--fw)*.6);background:var(--frame);box-shadow:0 2px 3px #0003}

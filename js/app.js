@@ -23,16 +23,48 @@ function draw() {
   $('#plaque').hidden = count === 0;
 }
 
+const SCALE = 2.6;
+let pan = { x: 0, y: 0 };
+function applyZoom() { stage.style.transform = zoom ? `translate(${pan.x}px,${pan.y}px) scale(${SCALE})` : ''; }
 function setZoom(on, x, y) {
   zoom = on;
-  if (on) { stage.style.transformOrigin = `${x}px ${y}px`; stage.style.transform = 'scale(2.6)'; }
-  else stage.style.transform = '';
+  pan = { x: 0, y: 0 };
+  if (on && x !== undefined) stage.style.transformOrigin = `${x}px ${y}px`;
+  applyZoom();
   app.classList.toggle('zoomed', on);
   $('#hint').textContent = rehang ? '本を長押しして、置きたい所まで動かします'
-    : on ? '本をタップすると作品解説' : '本棚をタップしても近づけます';
+    : on ? '指でなぞると動かせます。本をタップすると作品解説' : '本棚をタップしても近づけます';
   $('#zoomLabel').textContent = on ? '離れる' : '近づいて見る';
   $('#zoomPlus').setAttribute('d', on ? 'M7.5 10.5h6' : 'M10.5 7.5v6M7.5 10.5h6');
 }
+
+// 近づいたあとは、指でなぞって左右・上下に動かせる（本棚がまん中から外れきらない範囲で）
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  if (!zoom) return;
+  drag = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y, moved: false, id: e.pointerId };
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id || document.querySelector('.ghost')) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) < 8) return;
+  if (!drag.moved) { drag.moved = true; stage.classList.add('panning'); try { stage.setPointerCapture(e.pointerId); } catch (err) { /* 捕まえられなくても動かせる */ } }
+  const next = { x: drag.px + dx, y: drag.py + dy };
+  // 本棚の端が画面のまん中を越えないように止める
+  const c = piece.querySelector('.case').getBoundingClientRect(), a = app.getBoundingClientRect();
+  const cx = a.left + a.width / 2, cy = a.top + a.height / 2, ddx = next.x - pan.x, ddy = next.y - pan.y;
+  if (c.left + ddx > cx || c.right + ddx < cx) next.x = pan.x;
+  if (c.top + ddy > cy || c.bottom + ddy < cy) next.y = pan.y;
+  pan = next;
+  applyZoom();
+});
+const endDrag = () => {
+  if (drag && drag.moved) { stage.dataset.justDragged = '1'; setTimeout(() => delete stage.dataset.justDragged, 60); }
+  stage.classList.remove('panning');
+  drag = null;
+};
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
 
 // 本棚をタップで近づく（もう一度で離れる）。近づいた状態で本をタップすると作品解説
 stage.addEventListener('click', e => {
