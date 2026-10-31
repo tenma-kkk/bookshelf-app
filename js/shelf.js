@@ -74,6 +74,9 @@ export function render(piece, area) {
   });
   c.insertAdjacentHTML('beforeend', '<div class="plinth"></div>');
   piece.appendChild(c);
+  // ダウンライトが届くのは1〜3段目まで：3段目の下までの高さを測っておく
+  const rs = c.querySelectorAll('.shelfRow'), third = rs[Math.min(2, rs.length - 1)];
+  if (third) c.style.setProperty('--lit', third.offsetTop + third.offsetHeight + fw * 0.5 + 'px');
   return { rows: rows.filter(r => r.length).length, count: st.books.length };
 }
 

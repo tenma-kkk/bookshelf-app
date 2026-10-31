@@ -29,6 +29,7 @@ function empty() {
     room: { wall: 'gallery', floor: 'gallery' },
     wish: [],
     light: 'day',
+    lamp: 1,       // ダウンライトの明るさ（0＝消す〜1.6＝強い）
     books: [],
   };
 }
@@ -54,6 +55,8 @@ function changed() { save(); listeners.forEach(fn => fn(state)); }
 export function getState() { return state; }
 
 export function setLight(light) { state.light = light; changed(); }
+// 明るさはつまみを動かすたびに変わるので、本棚は描き直さずに保存だけする
+export function setLamp(v) { state.lamp = v; save(); }
 export function setShelf(patch) { state.shelf = { ...state.shelf, ...patch }; changed(); }
 export function setRoom(patch) { state.room = { ...state.room, ...patch }; changed(); }
 

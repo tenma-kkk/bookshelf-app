@@ -1,5 +1,5 @@
 // 全体のつなぎ：展示室・照明・近づく・館内案内・作品解説
-import { getState, onChange, setLight, addSamples } from './store.js';
+import { getState, onChange, setLight, setLamp, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
 import { openDesign, closeDesign, initDesign } from './design.js';
@@ -13,10 +13,19 @@ let zoom = false, rehang = false;
 function draw() {
   const st = getState();
   app.classList.toggle('night', st.light === 'night');
+  lamp(st.lamp ?? 1);
   const { count } = render(piece, { w: app.clientWidth, h: app.clientHeight });
   $('#mark').innerHTML = `<b>No.${st.no}</b>　の本棚`;
   $('#empty').hidden = count > 0;
 }
+
+// ダウンライト：明るさは右の真ん中のつまみ（本棚のデザイン変更を開いている間だけ出る）で決める
+function lamp(v) {
+  app.style.setProperty('--lamp', v);
+  app.classList.toggle('nolamp', v <= 0);
+  $('#lampLv').value = v;
+}
+$('#lampLv').addEventListener('input', e => { lamp(+e.target.value); setLamp(+e.target.value); });
 
 const SCALE = 2.6;
 let pan = { x: 0, y: 0 };
