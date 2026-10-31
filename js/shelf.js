@@ -1,5 +1,6 @@
 // 展示室の本棚：本を実寸で段に流し込み、画面のまん中に1台だけ置く
 import { FORMATS, SHELF, thickness, getState, moveBook } from './store.js';
+import { styleCase } from './design.js';
 
 const GAP = 0.6; // 本と本のすき間（mm）
 
@@ -49,8 +50,17 @@ export function render(piece, area) {
   piece.innerHTML = '';
   const c = document.createElement('div');
   c.className = 'case';
-  c.style.cssText = `--frame:${st.shelf.frame};--inner:${st.shelf.inner};--fw:${fw}px;--bh:${Math.max(3, bhMm * s)}px;width:${SHELF.inner * s + fw * 2}px`;
+  c.style.cssText = `--fw:${fw}px;--bh:${Math.max(3, bhMm * s)}px;width:${SHELF.inner * s + fw * 2}px`;
+  styleCase(c, st.shelf);
   c.innerHTML = '<div class="crown"></div>';
+  // 本棚の上の小物（4つまで）
+  if (st.tops.length) {
+    const t = document.createElement('div');
+    t.className = 'tops';
+    t.style.fontSize = Math.max(16, 62 * s) + 'px';
+    st.tops.forEach(e => { const sp = document.createElement('span'); sp.textContent = e; t.appendChild(sp); });
+    c.appendChild(t);
+  }
   rows.forEach(r => {
     const row = document.createElement('div');
     row.className = 'shelfRow';

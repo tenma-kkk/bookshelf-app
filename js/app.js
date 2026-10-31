@@ -2,6 +2,7 @@
 import { getState, onChange, setLight, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
+import { noteOf, applyRoom, openDesign, closeDesign, initDesign } from './design.js';
 
 const $ = s => document.querySelector(s);
 const app = $('#app'), stage = $('#stage'), piece = $('#piece');
@@ -10,10 +11,11 @@ let zoom = false, rehang = false;
 function draw() {
   const st = getState();
   app.classList.toggle('night', st.light === 'night');
+  applyRoom(app, st.room);
   const { rows, count } = render(piece, { w: app.clientWidth, h: app.clientHeight });
   $('#pNo').textContent = `作品 No.${st.no}`;
   $('#pTitle').textContent = st.shelf.name;
-  $('#pMat').textContent = `${st.shelf.note}　横幅 56cm`;
+  $('#pMat').textContent = `${noteOf(st.shelf)}　横幅 56cm`;
   $('#pFacts').textContent = `${count}冊　${Math.max(rows, 1)}段　${st.since}年から`;
   $('#mark').innerHTML = `<b>No.${st.no}</b>　の本棚`;
   $('#empty').hidden = count > 0;
@@ -54,6 +56,7 @@ menu.addEventListener('click', e => {
   menu.hidden = true;
   if (go.dataset.go === 'rehang') toggleRehang(true);
   if (go.dataset.go === 'add') openAdd();
+  if (go.dataset.go === 'design') openDesign();
   if (go.dataset.go === 'soon') toast('この部屋は、まだ準備中です');
 });
 function toggleRehang(on) {
@@ -70,12 +73,14 @@ $('#work').addEventListener('click', e => { if (e.target.id === 'work') closeWor
 $('#aClose').onclick = closeAdd;
 $('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd(); });
 initAdd(title => toast(`「${title}」を本棚に加えました`));
+initDesign();
+$('#design').addEventListener('click', e => { if (e.target.id === 'design') closeDesign(); });
 $('#emptyAdd').onclick = openAdd;
 $('#emptySample').onclick = () => { addSamples(); toast('見本の本を並べました。本棚から外すこともできます'); };
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (!$('#add').hidden) { closeAdd(); return; }
-  for (const id of ['work', 'menu']) if (!$('#' + id).hidden) { $('#' + id).hidden = true; return; }
+  for (const id of ['work', 'menu', 'design']) if (!$('#' + id).hidden) { $('#' + id).hidden = true; return; }
   if (zoom) setZoom(false);
 });
 

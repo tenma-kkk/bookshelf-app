@@ -11,6 +11,7 @@
 </head>
 <body>
 <div class="app" id="app">
+  <div class="room" aria-hidden="true"><div class="wall"></div><div class="floor"></div><div class="dim"></div></div>
   <div class="top">
     <div class="mark" id="mark"></div>
     <div class="icons">
@@ -84,6 +85,14 @@
   <div class="btns"><button type="button" id="aClose">やめる</button><button type="submit" class="go">本棚に加える</button></div>
 </form></div>
 
+<!-- 展示室の設え（本棚を見ながら変えられるよう、札は低め） -->
+<div class="sheet peek" id="design" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="dHead" style="grid-template-columns:1fr">
+  <div><div class="no">展示室の設え</div><h2 id="dHead">本棚と展示室を整える</h2></div>
+  <div class="tabs" role="tablist"><button type="button" role="tab" data-t="shelf">本棚</button><button type="button" role="tab" data-t="room">壁と床</button><button type="button" role="tab" data-t="tops">小物</button></div>
+  <div id="dBody"></div>
+  <div class="btns"><button type="button" class="go" id="dClose">これで飾る</button></div>
+</div></div>
+
 <!-- 館内案内 -->
 <div class="menu" id="menu" hidden>
   <button type="button" class="ic close" id="mClose" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -91,7 +100,7 @@
   <button type="button" data-go="rehang"><b>展示替え</b><small>本の並べ替え</small></button>
   <button type="button" data-go="add"><b>収蔵品を加える</b><small>本を登録する</small></button>
   <button type="button" data-go="soon"><b>収蔵品目録</b><small>持ってる？チェック（準備中）</small></button>
-  <button type="button" data-go="soon"><b>展示室の設え</b><small>本棚・壁・床・小物（準備中）</small></button>
+  <button type="button" data-go="design"><b>展示室の設え</b><small>本棚・壁・床・小物</small></button>
   <button type="button" data-go="soon"><b>ほかの展示室へ</b><small>みんなの本棚（準備中）</small></button>
 </div>
 
