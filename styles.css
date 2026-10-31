@@ -246,3 +246,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .lampSide small{opacity:.7}
 .lampSide b{font-size:10px;font-weight:500;letter-spacing:.1em;writing-mode:vertical-rl;margin-top:4px}
 .lampSide input{writing-mode:vertical-lr;direction:rtl;width:28px;height:180px;accent-color:#c89a55}
+
+/* 撮る前の4つのチェック（ピント・明るさ・反射・近さ）。全部 ✓ になったら自動で撮る */
+.cpChecks{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);display:flex;justify-content:center;gap:18px;color:#fff;font-size:11px;pointer-events:none}
+.cpChecks div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:44px}
+.cpChecks i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:700;background:rgba(255,255,255,.25)}
+.cpChecks .ok i{background:#43c06d}.cpChecks .ok i::before{content:"✓"}
+.cpChecks .ng{color:#ffd36b}.cpChecks .ng i{background:#f0a429}.cpChecks .ng i::before{content:"!"}
+#cpAfterMarks{position:absolute;inset:0;width:100%;height:100%}
+#cpAfterMarks rect{fill:none;stroke:#e2572b;stroke-width:3;vector-effect:non-scaling-stroke}

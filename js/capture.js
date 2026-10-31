@@ -1,27 +1,45 @@
 // 本棚を撮る：まず本棚全体 → 上の段から1段ずつ。枠つきカメラで、まっすぐになったら自動でシャッター。
 // 1段ごとに、自動で引いた本の境目を、違う所だけタップで直してから本棚に入れる。
-import { getState, setShelf, addBook, removeSamples } from './store.js';
+// 撮る前に、ピント・明るさ・反射・近さを確かめる。うまく読めなかった本は、1冊ずつ近くで撮り直せる。
+import { getState, setShelf, addBook, updateBook, removeSamples } from './store.js';
 import { putImage } from './images.js';
 import { redrawSpine } from './redraw.js';
 
 const ROW_W = 560, PXMM = 4;   // 段の中の横幅（mm）と、切り出す細かさ（1mm あたりの点の数）
 const $ = s => document.querySelector(s);
-const S = { phase: 'all', rows: 5, row: 0, added: 0, colors: null };
-let stream = null, raf = 0, tilt = null, holdStart = 0, lastProbe = 0, edgeOK = false, done = () => {};
+const S = { phase: 'all', rows: 5, row: 0, added: 0, colors: null, queue: [], qi: 0, fixed: 0, resume: false, rowRetakes: [] };
+let stream = null, raf = 0, tilt = null, shake = 0, holdStart = 0, lastProbe = 0, edgeOK = false, Q = null, peak = 0, done = () => {};
 const probe = document.createElement('canvas'), pctx = probe.getContext('2d', { willReadFrequently: true });
 const within = (p, ms) => Promise.race([p, new Promise((_, ng) => setTimeout(() => ng(new Error('timeout')), ms))]);
 
-export function openCapture(onDone) {
+// opts.books：撮り直す本の id（作品解説の「近くで撮り直す」から来たとき）
+export function openCapture(onDone, opts = {}) {
   done = onDone || (() => {});
-  Object.assign(S, { phase: 'all', rows: 5, row: 0, added: 0, colors: null, removedSamples: 0 });
+  Object.assign(S, { phase: 'all', rows: 5, row: 0, added: 0, colors: null, removedSamples: 0, queue: [], qi: 0, fixed: 0, resume: false, rowRetakes: [] });
   $('#capture').hidden = false;
+  if (opts.books && opts.books.length) { S.phase = 'book'; S.queue = opts.books; bookStart(); return; }
   showIntro();
 }
-function close() { stopCam(); $('#capture').hidden = true; done(S.added, S.removedSamples || 0); }
+function close() { stopCam(); $('#capture').hidden = true; done(S.added, S.removedSamples || 0, S.fixed); }
+function nextRow() {
+  S.phase = 'row'; S.row++;
+  if (S.row >= S.rows) close(); else showIntro();
+}
 
 // ---- 案内の画面 ----
-function showIntro() {
+function showIntro(note) {
   view('intro');
+  $('#cpNote').textContent = note || '';
+  if (S.phase === 'book') {
+    $('#cpStep').textContent = `近くで撮り直し ${S.qi + 1} / ${S.queue.length}冊`;
+    $('#cpHead').textContent = '1冊ずつ近くで撮ります';
+    $('#cpText').textContent = '縦長の枠に、背表紙1冊を上から下まで入れてください。スマホは縦向きのままで大丈夫です。撮れたらすぐ描き直して、次の本へ進みます。';
+    $('#cpGo').textContent = note ? 'もう一度撮る' : '撮る';
+    $('#cpSkip').hidden = false;
+    $('#cpSkip').textContent = 'この本はとばす';
+    return;
+  }
+  $('#cpSkip').textContent = 'ここで終わる';
   const all = S.phase === 'all';
   $('#cpStep').textContent = all ? '本棚全体' : `${S.row + 1}段目 / ${S.rows}段`;
   $('#cpHead').textContent = all ? 'まず、本棚全体を撮ります' : `${S.row + 1}段目を撮ります`;
@@ -30,13 +48,12 @@ function showIntro() {
   $('#cpGo').textContent = all ? '本棚全体を撮る' : `${S.row + 1}段目を撮る`;
   $('#cpSkip').hidden = all;
 }
-function view(name) { for (const v of ['intro', 'cam', 'all', 'row']) $('#cp_' + v).hidden = v !== name; }
+function view(name) { for (const v of ['intro', 'cam', 'all', 'row', 'after']) $('#cp_' + v).hidden = v !== name; }
 
 // ---- 枠つきカメラ ----
-const aspect = () => S.phase === 'all' ? 0.62 : ROW_W / 236;
+const aspect = () => S.phase === 'all' ? 0.62 : S.phase === 'book' ? 0.22 : ROW_W / 236;
 async function startCam() {
   const msg = $('#cpNote');
-  msg.textContent = '';
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { msg.textContent = 'この画面ではカメラが使えません。'; return; }
   try { if (typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission) await within(DeviceMotionEvent.requestPermission(), 4000); } catch (e) { /* 傾きセンサーなしでも撮れる */ }
   try { stream = await within(navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false }), 6000); }
@@ -44,8 +61,9 @@ async function startCam() {
   const v = $('#cpVideo');
   v.srcObject = stream;
   try { await v.play(); } catch (e) { /* 自動再生できなくても続ける */ }
-  tilt = null; holdStart = 0;
+  tilt = null; shake = 0; Q = null; peak = 0; holdStart = 0;
   $('#cpCamStep').textContent = $('#cpStep').textContent;
+  $('#cpCamBack').textContent = S.phase === 'book' ? 'とばす' : 'もどる';
   view('cam');
   addEventListener('devicemotion', onMotion);
   layoutFrame();
@@ -60,7 +78,7 @@ function stopCam() {
 function frameRect() {
   const cw = innerWidth, ch = innerHeight, a = aspect();
   let fw = cw * 0.9, fh = fw / a;
-  const maxH = ch * (S.phase === 'all' ? 0.68 : 0.6);
+  const maxH = ch * (S.phase === 'all' ? 0.68 : S.phase === 'book' ? 0.62 : 0.6);
   if (fh > maxH) { fh = maxH; fw = fh * a; }
   return { x: (cw - fw) / 2, y: (ch - fh) / 2, w: fw, h: fh };
 }
@@ -81,6 +99,9 @@ function onMotion(e) {
   const pitch = Math.asin(Math.max(-1, Math.min(1, g.z / n))) * 57.3;
   let rot = Math.atan2(g.x, g.y) * 57.3; rot = ((rot % 90) + 90 + 45) % 90 - 45;
   tilt = { pitch, rot };
+  // 手ぶれ：スマホが回っている速さ（度/秒）。なめらかにして使う
+  const rr = e.rotationRate;
+  if (rr && rr.alpha != null) shake = shake * 0.7 + Math.hypot(rr.alpha, rr.beta, rr.gamma) * 0.3;
 }
 function vidMap() { const v = $('#cpVideo'), vw = v.videoWidth, vh = v.videoHeight, s = Math.max(innerWidth / vw, innerHeight / vh); return { s, ox: (innerWidth - vw * s) / 2, oy: (innerHeight - vh * s) / 2 }; }
 function frameInVideo() { const r = frameRect(), m = vidMap(), f = (x, y) => [(x - m.ox) / m.s, (y - m.oy) / m.s]; return [f(r.x, r.y), f(r.x + r.w, r.y), f(r.x + r.w, r.y + r.h), f(r.x, r.y + r.h)]; }
@@ -98,11 +119,53 @@ function probeEdges(v) {
   const thr = Math.max(8, base * 1.5);
   return best(y0) > thr && best(y1) > thr;
 }
+// 撮る前のチェック：枠の中の明るさ・白く飛んだ所（反射）・くっきり具合（ピント）を測る
+const qc = document.createElement('canvas'), qx = qc.getContext('2d', { willReadFrequently: true });
+function quality(v) {
+  const q = frameInVideo(), x0 = Math.max(0, q[0][0]), y0 = Math.max(0, q[0][1]), x1 = Math.min(v.videoWidth, q[2][0]), y1 = Math.min(v.videoHeight, q[2][1]);
+  const fw = x1 - x0, fh = y1 - y0;
+  if (fw < 20 || fh < 20) return null;
+  // 明るさと反射：枠の中を小さくして全体を見る
+  const k = 240 / Math.max(fw, fh), W = Math.max(8, Math.round(fw * k)), H = Math.max(8, Math.round(fh * k));
+  qc.width = W; qc.height = H; qx.drawImage(v, x0, y0, fw, fh, 0, 0, W, H);
+  let d = qx.getImageData(0, 0, W, H).data, sum = 0, white = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; sum += l;
+    if (l >= 250 && Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]) < 20) white++;
+  }
+  const n = d.length / 4;
+  // ピント：枠のまん中を、縮めずにそのままの細かさで見る（縮めるとぼやけが隠れるため）
+  const cw = Math.min(360, Math.round(fw)), ch = Math.min(240, Math.round(fh));
+  qc.width = cw; qc.height = ch; qx.drawImage(v, x0 + (fw - cw) / 2, y0 + (fh - ch) / 2, cw, ch, 0, 0, cw, ch);
+  d = qx.getImageData(0, 0, cw, ch).data;
+  const L = (x, y) => { const i = (y * cw + x) * 4; return d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11; };
+  let lap = 0, m = 0;
+  for (let y = 1; y < ch - 1; y += 2) for (let x = 1; x < cw - 1; x += 2) { lap += Math.abs(4 * L(x, y) - L(x - 1, y) - L(x + 1, y) - L(x, y - 1) - L(x, y + 1)); m++; }
+  return { mean: sum / n, glare: white / n, sharp: lap / Math.max(1, m) };
+}
+function checks() {
+  const c = {
+    near: edgeOK,
+    light: !Q || Q.mean >= 55,
+    glare: !Q || Q.glare < 0.012,
+    // くっきり具合は、本の柄によって違うので「さっきまでで一番くっきりした時」とくらべる（ピントを探している途中は待つ）
+    sharp: shake < 25 && (!Q || Q.sharp >= Math.min(5, peak * 0.75)),
+  };
+  for (const el of document.querySelectorAll('#cpChecks [data-k]')) { el.classList.toggle('ok', c[el.dataset.k]); el.classList.toggle('ng', !c[el.dataset.k]); }
+  return c;
+}
+
 function loop(t) {
   raf = requestAnimationFrame(loop);
   const v = $('#cpVideo');
   if (!v.videoWidth) return;
-  if (t - lastProbe > 180) { lastProbe = t; try { edgeOK = probeEdges(v); } catch (e) { edgeOK = false; } }
+  if (t - lastProbe > 180) {
+    lastProbe = t;
+    // 1冊だけ撮るときは、枠に本を入れるだけでよい（棚板の線は見ない）
+    try { edgeOK = S.phase === 'book' ? true : probeEdges(v); } catch (e) { edgeOK = false; }
+    try { Q = quality(v); if (Q) peak = Math.max(peak * 0.99, Q.sharp); } catch (e) { Q = null; }
+  }
+  const ck = checks();
   const cam = $('#cp_cam');
   let lvl = null;
   if (tilt) {
@@ -111,11 +174,15 @@ function loop(t) {
     $('#cpBubble').style.transform = `translate(${cl(tilt.rot)}px,${cl(-tilt.pitch)}px)`;
   }
   cam.classList.toggle('level-ok', lvl === true);
-  const ready = edgeOK && lvl !== false;
+  const ready = ck.near && ck.light && ck.glare && ck.sharp && lvl !== false;
   cam.classList.toggle('ready', ready);
   cam.classList.toggle('tilted', lvl === false);
   $('#cpMsg').textContent = lvl === false ? 'スマホをまっすぐに（緑の丸をまん中へ）'
-    : !edgeOK ? (S.phase === 'all' ? '本棚のわくを、だいたい枠に入れてください' : '棚板の上と下を、だいたい枠の線に') : 'そのまま…';
+    : !ck.near ? (S.phase === 'all' ? '本棚のわくを、だいたい枠に入れてください' : '棚板の上と下を、だいたい枠の線に')
+    : !ck.light ? '暗いです。部屋の明かりをつけてください'
+    : !ck.glare ? '光が反射しています。スマホを少し斜めに'
+    : !ck.sharp ? (shake >= 25 ? 'スマホを止めてください' : 'ピントが合うまで、少し待つか少し離してください')
+    : 'そのまま…';
   if (ready) {
     if (!holdStart) holdStart = t;
     const p = Math.min(1, (t - holdStart) / 550);
@@ -132,7 +199,9 @@ function shoot() {
   c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
   stopCam();
   const src = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, c.width, c.height);
-  const quad = refine(src, q.map(([x, y]) => [Math.max(0, Math.min(c.width, x * k)), Math.max(0, Math.min(c.height, y * k))]));
+  const q2 = q.map(([x, y]) => [Math.max(0, Math.min(c.width, x * k)), Math.max(0, Math.min(c.height, y * k))]);
+  if (S.phase === 'book') { setTimeout(() => resultBook(src, q2), 30); return; }
+  const quad = refine(src, q2);
   setTimeout(() => S.phase === 'all' ? resultAll(src, quad) : resultRow(src, quad), 30);
 }
 
@@ -284,6 +353,7 @@ async function saveRow() {
   let gain = [1, 1, 1];
   if (S.colors) { const f = hex(S.colors.frame), l = f[0] * 0.3 + f[1] * 0.59 + f[2] * 0.11; if (l > 150) gain = [242 / f[0], 240 / f[1], 234 / f[2]].map(g => Math.max(0.7, Math.min(1.5, g))); }
   const xs = [0, ...ROW.cuts, W];
+  S.rowRetakes = [];
   for (let i = 1; i < xs.length; i++) {
     $('#cpRowOk').textContent = `描き直しています… ${i}/${xs.length - 1}冊`;
     await new Promise(r => setTimeout(r, 0));   // 進み具合を画面に出す
@@ -304,17 +374,61 @@ async function saveRow() {
     const avg = avgColor(c.getContext('2d').getImageData(0, 0, c.width, c.height), () => true);
     // 見本4のやり方で描き直す。うまく読めない本は、写真のまま入れて「近くで撮り直し」の印を付ける
     const rd = redrawSpine(c, gain);
-    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((bottom - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, redrawn: !!rd.canvas, retake: rd.retake, row: S.row + 1 });
+    const id = addBook({ title: '', author: '', format: 'shiroku', h: Math.round((bottom - top) / PXMM), w: Math.round((b - a) / PXMM * 10) / 10, color: avg, img: true, redrawn: !!rd.canvas, retake: !rd.canvas, row: S.row + 1 });
+    if (!rd.canvas) S.rowRetakes.push({ id, a, b, top, bottom });
     await putImage(id + '#photo', photo);
     await putImage(id, rd.canvas ? await new Promise(ok => rd.canvas.toBlob(ok, 'image/png')) : photo);
     S.added++;
   }
 }
 
+// ---- 段を入れたあと：うまく読めなかった本に印を付け、1冊ずつ撮り直すか、あとでにするか選ぶ ----
+function showAfter(n) {
+  const k = S.rowRetakes.length;
+  $('#cpAfterStep').textContent = `${S.row + 1}段目 / ${S.rows}段`;
+  $('#cpAfterHead').textContent = `${n}冊を本棚に入れました`;
+  $('#cpAfterImg').src = ROW.canvas.toDataURL('image/jpeg', 0.8);
+  $('#cpAfterFix').style.aspectRatio = `${ROW.W} / ${ROW.H}`;
+  const mk = $('#cpAfterMarks');
+  mk.setAttribute('viewBox', `0 0 ${ROW.W} ${ROW.H}`);
+  mk.innerHTML = S.rowRetakes.map(r => `<rect x="${r.a + 4}" y="${r.top + 4}" width="${Math.max(4, r.b - r.a - 8)}" height="${Math.max(4, r.bottom - r.top - 8)}"/>`).join('');
+  $('#cpAfterText').textContent = `${k}冊は文字がうまく読めなかったので、写真のまま入れています。1冊ずつ近くで撮ると、描き直せます。`;
+  $('#cpBookGo').textContent = `1冊ずつ近くで撮る（${k}冊）`;
+  $('#cpBookLater').textContent = S.row + 1 >= S.rows ? 'あとで（終わる）' : 'あとで（次の段へ）';
+  view('after');
+}
+
+// ---- 1冊だけ近くで撮る ----
+function bookStart(note) { showIntro(note); if (!note) startCam(); }
+function nextBook() {
+  S.qi++;
+  if (S.qi < S.queue.length) { bookStart(); return; }
+  if (S.resume) { S.resume = false; nextRow(); } else close();
+}
+async function resultBook(src, q) {
+  const id = S.queue[S.qi], bk = getState().books.find(x => x.id === id);
+  if (!bk) { nextBook(); return; }
+  const hw = (len(q[0], q[1]) + len(q[3], q[2])) / 2, hh = (len(q[0], q[3]) + len(q[1], q[2])) / 2;
+  const H = Math.round((bk.h || 200) * PXMM * 1.5), W = Math.max(8, Math.round(H * hw / hh)), img = rectify(src, q, W, H), canvas = toCanvas(img);
+  // 枠の中の本の左右の端：まん中にいちばん近い境目。見つからなければ枠いっぱいを1冊とみなす
+  const mid = W / 2;
+  let a = 0, z = W;
+  for (const c of detect(img)) { if (c < mid && c > a) a = c; if (c > mid && c < z) z = c; }
+  if (z - a < W * 0.25) { a = 0; z = W; }
+  const c = document.createElement('canvas'); c.width = z - a; c.height = H;
+  c.getContext('2d').drawImage(canvas, a, 0, z - a, H, 0, 0, z - a, H);
+  const rd = redrawSpine(c);
+  await putImage(id + '#photo', await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.9)));
+  if (!rd.canvas) { bookStart('まだうまく読めませんでした。明るい所で、背表紙が枠いっぱいになるように、もう一度撮ってください。'); return; }
+  await putImage(id, await new Promise(ok => rd.canvas.toBlob(ok, 'image/png')));
+  updateBook(id, { redrawn: true, retake: false, color: avgColor(c.getContext('2d').getImageData(0, 0, c.width, c.height), () => true) });
+  S.fixed++;
+  nextBook();
+}
+
 export function initCapture() {
-  $('#cpGo').onclick = startCam;
   $('#cpClose').onclick = close;
-  $('#cpCamBack').onclick = () => { stopCam(); showIntro(); };
+  $('#cpCamBack').onclick = () => { stopCam(); if (S.phase === 'book') nextBook(); else showIntro(); };
   $('#cpShutter').onclick = shoot;
   $('#cpRowsMinus').onclick = () => { if (S.rows > 1) { S.rows--; $('#cpRows').textContent = S.rows + '段'; } };
   $('#cpRowsPlus').onclick = () => { if (S.rows < 10) { S.rows++; $('#cpRows').textContent = S.rows + '段'; } };
@@ -325,12 +439,14 @@ export function initCapture() {
   $('#cpReset').onclick = () => { ROW.cuts = detect(ROW.img); ROW.taps = 0; drawCuts(); };
   $('#cpRowRetake').onclick = () => showIntro();
   $('#cpRowOk').onclick = async () => {
-    const b = $('#cpRowOk'); b.disabled = true; b.textContent = '本棚に入れています…';
+    const b = $('#cpRowOk'), before = S.added; b.disabled = true; b.textContent = '本棚に入れています…';
     try { await saveRow(); } finally { b.disabled = false; b.textContent = '本棚に入れる'; }
-    S.row++;
-    if (S.row >= S.rows) close(); else showIntro();
+    if (S.rowRetakes.length) showAfter(S.added - before); else nextRow();
   };
-  $('#cpSkip').onclick = () => close();
+  $('#cpBookGo').onclick = () => { S.phase = 'book'; S.queue = S.rowRetakes.map(r => r.id); S.qi = 0; S.resume = true; bookStart(); };
+  $('#cpBookLater').onclick = nextRow;
+  $('#cpSkip').onclick = () => { if (S.phase === 'book') nextBook(); else close(); };
+  $('#cpGo').onclick = () => { $('#cpNote').textContent = ''; startCam(); };
 }
 
 // 確かめ用：カメラなしで、写真から1段の画面を出す（パソコンでの確認に使う）

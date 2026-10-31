@@ -1,7 +1,7 @@
 // 全体のつなぎ：展示室・照明・近づく・館内案内・作品解説
 import { getState, onChange, setLight, setLamp, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
-import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
+import { openWork, closeWork, openAdd, closeAdd, initAdd, onReshoot } from './sheets.js';
 import { openDesign, closeDesign, initDesign } from './design.js';
 import { openCatalog, closeCatalog, initCatalog } from './catalog.js';
 import { openCapture, initCapture } from './capture.js';
@@ -157,7 +157,12 @@ $('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd()
 initAdd(title => toast(`「${title}」を本棚に加えました`));
 initDesign();
 initCapture();
-$('#aShoot').onclick = () => { closeAdd(); openCapture((n, r) => { if (n) toast(`撮った本 ${n}冊を本棚に入れました` + (r ? '（見本の本は外しました）' : '')); }); };
+const shot = (n, r, f) => {
+  if (n) toast(`撮った本 ${n}冊を本棚に入れました` + (f ? `（${f}冊は近くで撮って描き直し）` : '') + (r ? '（見本の本は外しました）' : ''));
+  else if (f) toast(`${f}冊を描き直しました`);
+};
+$('#aShoot').onclick = () => { closeAdd(); openCapture(shot); };
+onReshoot(id => openCapture(shot, { books: [id] }));
 // 目録で選んだ本まで近づいて、光らせる
 initCatalog(id => {
   setZoom(false);
