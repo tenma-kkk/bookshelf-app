@@ -41,7 +41,7 @@
   <div class="cover" id="wCover"></div>
   <div><div class="no" id="wNo"></div><h2 id="wTitle"></h2><div class="au" id="wAuthor"></div>
     <dl><dt>種類</dt><dd id="wFmt"></dd><dt>大きさ</dt><dd id="wSize"></dd></dl></div>
-  <div class="full cmpRow"><button type="button" class="chip" id="wCompare" hidden>写真と比べる</button><p class="soon" id="wRetake" hidden>この本は、写真の文字がうまく読めなかったので、写真のまま入れています。近くで撮り直すと、描き直せます。</p></div>
+  <div class="full cmpRow"><button type="button" class="chip" id="wCompare" hidden>写真と比べる</button><button type="button" class="chip" id="wReshoot" hidden>近くで撮り直す</button><p class="soon" id="wRetake" hidden>この本は、写真の文字がうまく読めなかったので、写真のまま入れています。近くで撮り直すと、描き直せます。</p></div>
   <div class="fields full" id="wName" hidden><div class="row2"><label>題名<input id="n_title" autocomplete="off" placeholder="あとから入れられます"></label><label>作者<input id="n_author" autocomplete="off"></label></div></div>
   <details class="mine full" id="wMine"><summary>わたしの記録 <small>自分だけに見えます</small></summary>
     <div class="fields">
@@ -127,6 +127,7 @@
     <svg id="cpOv" aria-hidden="true"><path id="cpMask" fill="rgba(0,0,0,.55)" fill-rule="evenodd"/><g id="cpBrks"></g></svg>
     <div class="cpCamTop"><span class="cpStep" id="cpCamStep"></span><span class="cpMsg" id="cpMsg"></span><span class="cpRot" id="cpRot" hidden>スマホを横向きにすると、大きくくっきり撮れます</span></div>
     <div class="cpLevel" aria-hidden="true"><span id="cpBubble"></span></div>
+    <div class="cpChecks" id="cpChecks"><div data-k="sharp"><i></i>ピント</div><div data-k="light"><i></i>明るさ</div><div data-k="glare"><i></i>反射</div><div data-k="near"><i></i>近さ</div></div>
     <div class="cpCamBot"><button type="button" id="cpCamBack">もどる</button>
       <button type="button" class="cpShutter" id="cpShutter" aria-label="撮る"><svg viewBox="0 0 72 72"><circle id="cpArc" cx="36" cy="36" r="34" fill="none" stroke="#43c06d" stroke-width="5" stroke-dasharray="0 214" transform="rotate(-90 36 36)"/></svg></button><span></span></div>
   </section>
@@ -145,6 +146,15 @@
       <p class="cpTips">黄色の線が本と本の境目です。線のない所をタップすると増え、線をタップすると消えます。左右にスクロールできます。</p>
       <div class="cpBtns"><button type="button" class="pill" id="cpReset">自動の線にもどす</button><button type="button" class="pill" id="cpRowRetake">撮り直す</button></div>
       <button type="button" class="pill main" id="cpRowOk">本棚に入れる</button></div>
+  </section>
+  <section class="cpPage" id="cp_after" hidden>
+    <div class="cpTop"><span class="cpStep" id="cpAfterStep"></span></div>
+    <div class="cpBody"><h2 id="cpAfterHead"></h2>
+      <div class="cpFix"><div class="cpFixIn" id="cpAfterFix"><img id="cpAfterImg" alt="本棚に入れた段"><svg id="cpAfterMarks" preserveAspectRatio="none"></svg></div></div>
+      <p id="cpAfterText"></p>
+      <button type="button" class="pill main" id="cpBookGo"></button>
+      <button type="button" class="pill" id="cpBookLater"></button>
+      <p class="cpTips">あとでにしても、本をタップした作品解説の「近くで撮り直す」から、いつでも撮れます。</p></div>
   </section>
 </div>
 

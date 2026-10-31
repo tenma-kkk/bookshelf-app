@@ -18,7 +18,11 @@ async function tx(mode, fn) {
     t.onerror = () => ng(t.error);
   });
 }
-export const putImage = (id, blob) => tx('readwrite', st => st.put(blob, id));
+export const putImage = (id, blob) => {
+  // 撮り直したときは、前の画像のアドレスを捨てて、新しい画像を出す
+  if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
+  return tx('readwrite', st => st.put(blob, id));
+};
 export const delImage = id => tx('readwrite', st => st.delete(id));
 const urls = new Map();
 // 画面に出すためのアドレス（同じ画像は1回だけ読み出す）

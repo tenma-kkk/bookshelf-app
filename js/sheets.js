@@ -5,6 +5,9 @@ import { lookup, normalizeIsbn } from './lookup.js';
 import { startScan } from './scan.js';
 
 const $ = s => document.querySelector(s);
+let reshoot = () => {};
+// 「近くで撮り直す」を押したときにカメラを開く（カメラは app.js がつなぐ）
+export function onReshoot(fn) { reshoot = fn; }
 
 // ---- 作品解説 ----
 export function openWork(id) {
@@ -35,6 +38,10 @@ export function openWork(id) {
     cmp.textContent = showPhoto ? '描き直しにもどす' : '写真と比べる';
   };
   $('#wRetake').hidden = !b.retake;
+  // 撮った本は、1冊だけ近くで撮り直せる
+  const rs = $('#wReshoot');
+  rs.hidden = !b.img;
+  rs.onclick = () => { closeWork(); reshoot(id); };
   // 撮った本は、題名と作者をあとから入れられる（Step 3 では AI が入れる）
   const nm = $('#wName');
   nm.hidden = !b.img;
