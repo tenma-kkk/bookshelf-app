@@ -15,7 +15,7 @@
     <div class="mark" id="mark"></div>
     <div class="icons">
       <button type="button" class="ic" id="lightBtn" aria-label="照明を切り替える"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></button>
-      <button type="button" class="ic" id="menuBtn" aria-label="館内案内"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button type="button" class="ic" id="menuBtn" aria-label="メニュー"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </div>
 
@@ -24,7 +24,7 @@
   <div class="empty" id="empty" hidden>
     <h2>まだ展示がありません</h2>
     <p>本を加えると、この本棚に並びます。<br>まずは見本の本で試すこともできます。</p>
-    <button type="button" class="pill main" id="emptyAdd">収蔵品を加える</button>
+    <button type="button" class="pill main" id="emptyAdd">本の登録</button>
     <button type="button" class="pill" id="emptySample">見本の本を並べてみる</button>
   </div>
 
@@ -32,7 +32,7 @@
   <div class="bottom">
     <div class="hint" id="hintBox"><button type="button" class="zoomBtn" id="zoomBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path id="zoomPlus" d="M10.5 7.5v6M7.5 10.5h6"/></svg><span id="zoomLabel">近づいて見る</span></button><p id="hint"></p></div>
   </div>
-  <div class="rehangBar" id="rehangBar" hidden>展示替え中<button type="button" id="rehangDone">終わる</button></div>
+  <div class="rehangBar" id="rehangBar" hidden>本の並び替え中<button type="button" id="rehangDone">終わる</button></div>
 </div>
 
 <!-- 作品解説 -->
@@ -56,7 +56,7 @@
 
 <!-- 収蔵品を加える -->
 <div class="sheet" id="add" hidden><form class="card" id="addForm" role="dialog" aria-modal="true" aria-labelledby="aHead" style="grid-template-columns:1fr" novalidate>
-  <div><div class="no">収蔵品を加える</div><h2 id="aHead">本を登録する</h2></div>
+  <div><div class="no">本の登録</div><h2 id="aHead">本を登録する</h2></div>
   <button type="button" class="shootBig" id="aShoot"><b>本棚を撮る</b><small>本棚全体 → 1段ずつ。並びのまま本棚に入ります</small></button>
   <div class="or">1冊ずつ登録する</div>
   <div class="tabs" role="tablist">
@@ -87,14 +87,14 @@
 
 <!-- 展示室の設え（本棚を見ながら変えられるよう、札は低め） -->
 <div class="sheet peek" id="design" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="dHead" style="grid-template-columns:1fr">
-  <div><div class="no">本棚を選ぶ</div><h2 id="dHead">展示する本棚</h2></div>
+  <div><div class="no">本棚のデザイン変更</div><h2 id="dHead">展示する本棚</h2></div>
   <div id="dBody"></div>
   <div class="btns"><button type="button" class="go" id="dClose">これで飾る</button></div>
 </div></div>
 
 <!-- 収蔵品目録 -->
 <div class="sheet" id="catalog" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="cHead" style="grid-template-columns:1fr">
-  <div><div class="no">収蔵品目録</div><h2 id="cHead">本棚の本をしらべる</h2></div>
+  <div><div class="no">本を探す</div><h2 id="cHead">本棚の本をしらべる</h2></div>
   <div class="tabs" role="tablist"><button type="button" role="tab" data-t="find">探す</button><button type="button" role="tab" data-t="check">持ってる？</button><button type="button" role="tab" data-t="wish">ほしい本</button><button type="button" role="tab" data-t="keep">保管</button></div>
   <div id="cBody"></div>
   <div class="btns"><button type="button" id="cClose">展示にもどる</button></div>
@@ -103,13 +103,13 @@
 <!-- 館内案内 -->
 <div class="menu" id="menu" hidden>
   <button type="button" class="ic close" id="mClose" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <h3>館内案内</h3>
-  <button type="button" data-go="rehang"><b>展示替え</b><small>本の並べ替え</small></button>
-  <button type="button" data-go="add"><b>収蔵品を加える</b><small>本を登録する</small></button>
-  <button type="button" data-go="catalog"><b>収蔵品目録</b><small>探す・持ってる？・ほしい本</small></button>
-  <button type="button" data-go="design"><b>本棚を選ぶ</b><small>本棚のデザインだけ変えられます</small></button>
-  <button type="button" data-go="soon"><b>ほかの展示室へ</b><small>みんなの本棚（準備中）</small></button>
-  <button type="button" data-go="keep"><b>保管と引き継ぎ</b><small>バックアップ</small></button>
+  <h3>メニュー</h3>
+  <button type="button" data-go="rehang"><b>本の並び替え</b><small></small></button>
+  <button type="button" data-go="add"><b>本の登録</b><small></small></button>
+  <button type="button" data-go="catalog"><b>本を探す</b><small>持ってる？・ほしい本も</small></button>
+  <button type="button" data-go="design"><b>本棚のデザイン変更</b><small></small></button>
+  <button type="button" data-go="soon"><b>みんなの本棚</b><small>準備中</small></button>
+  <button type="button" data-go="keep"><b>バックアップ</b><small></small></button>
 </div>
 
 <!-- 本棚を撮る -->
