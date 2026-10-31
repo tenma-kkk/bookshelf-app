@@ -229,3 +229,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);transform:translateX(-50%);z-index:40;background:#26231f;color:#fbfaf7;font-size:13px;padding:9px 16px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center}
 .toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.stage,.app,.toast{transition:none}.rehang .bk{animation:none}}
+
+/* ダウンライト：本棚の真ん中の上から1つ。壁をふんわり照らし、光は1〜3段目まで（--lit）届く。強さは --lamp */
+.app{--lamp:1}
+.case::before{content:"";position:absolute;left:-40%;right:-40%;top:-45%;height:75%;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 34% 75% at 50% 0,rgba(255,196,120,calc(.50*var(--lamp))),transparent 78%)}
+.night .case::before{background:radial-gradient(ellipse 34% 75% at 50% 0,rgba(255,200,130,calc(.70*var(--lamp))),transparent 78%)}
+.case::after{content:"";position:absolute;inset:calc(var(--fw)*-.5) 0 0;z-index:3;pointer-events:none;opacity:min(1,var(--lamp));
+  background:radial-gradient(75% calc(var(--lit,300px)*1.05) at 50% 0,rgba(255,230,175,.95) 0%,rgba(255,225,165,.55) 70%,transparent 100%),
+             linear-gradient(180deg,rgba(255,205,140,.45) 0,rgba(255,200,130,.15) var(--lit,300px),rgba(0,0,0,.18) calc(var(--lit,300px) + 40px),rgba(0,0,0,.32) 100%);
+  mix-blend-mode:soft-light}
+.nolamp .case::before,.nolamp .case::after{display:none}
+.stage.panning .case::before{display:none}
+.lampSide{position:fixed;right:max(10px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:30;display:none;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px}
+.designing .lampSide{display:flex}
+.lampSide small{opacity:.7}
+.lampSide b{font-size:10px;font-weight:500;letter-spacing:.1em;writing-mode:vertical-rl;margin-top:4px}
+.lampSide input{writing-mode:vertical-lr;direction:rtl;width:28px;height:180px;accent-color:#c89a55}
