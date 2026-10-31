@@ -53,14 +53,7 @@ export function render(piece, area) {
   c.style.cssText = `--fw:${fw}px;--bh:${Math.max(3, bhMm * s)}px;width:${SHELF.inner * s + fw * 2}px`;
   styleCase(c, st.shelf);
   c.innerHTML = '<div class="crown"></div>';
-  // 本棚の上の小物（4つまで）
-  if (st.tops.length) {
-    const t = document.createElement('div');
-    t.className = 'tops';
-    t.style.fontSize = Math.max(16, 62 * s) + 'px';
-    st.tops.forEach(e => { const sp = document.createElement('span'); sp.textContent = e; t.appendChild(sp); });
-    c.appendChild(t);
-  }
+
   rows.forEach(r => {
     const row = document.createElement('div');
     row.className = 'shelfRow';

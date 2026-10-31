@@ -1,5 +1,6 @@
-// 展示室の設え：本棚のデザイン（選ぶ・自分で作る）・壁と床・本棚の上の小物
-import { getState, setShelf, setRoom, setTops } from './store.js';
+// 展示室の設え：本棚のデザイン（選ぶ・自分で作る）・壁と床
+// 小物（飾り）は、背表紙のリアルさに見合う質にできないので置かない（2026-10-31 決定）
+import { getState, setShelf, setRoom } from './store.js';
 
 export const WOODS = {
   oak: { name: 'オーク', frame: '#c89b65', inner: '#b5854f' },
@@ -20,7 +21,6 @@ const MATS = { paint: 'つるっと塗装', oak: 'オーク', walnut: 'ウォー
 export const WALLS = { gallery: '展示室の白い壁', plaster: 'しっくい', brick: 'レンガ', panel: '木の羽目板', navy: '濃紺', damask: 'ダマスク柄' };
 export const FLOORS = { gallery: '展示室の床', wood: 'フローリング', herring: 'ヘリンボーン', carpet: 'じゅうたん', marble: '大理石' };
 const DARK_WALLS = new Set(['brick', 'navy', 'damask']);
-export const TOPS = [['🪴', '観葉植物'], ['🐉', 'フィギュア'], ['🕰️', '置き時計'], ['🌍', '地球儀'], ['🕯️', 'キャンドル'], ['🖼️', '写真立て'], ['🏆', 'トロフィー']];
 const FRAME_COLORS = ['#ffffff', '#f7f6f2', '#e9e1d2', '#c9b79c', '#8a8f86', '#23395b', '#2f4f3e', '#7a2e2e', '#151515'];
 const INNER_COLORS = [null, '#f2cf1d', '#c0392b', '#8ecae6', '#f3f1ec', '#3a2414', '#2f6b4f', '#262626'];
 
@@ -130,13 +130,6 @@ function draw() {
   if (tab === 'room') {
     body.appendChild(group('壁', Object.entries(WALLS).map(([k, n]) => chip(n, st.room.wall === k, () => { setRoom({ wall: k }); draw(); }))));
     body.appendChild(group('床', Object.entries(FLOORS).map(([k, n]) => chip(n, st.room.floor === k, () => { setRoom({ floor: k }); draw(); }))));
-  }
-  if (tab === 'tops') {
-    const on = st.tops;
-    body.appendChild(group(`本棚の上に飾る（4つまで・いま${on.length}つ）`, TOPS.map(([e, n]) => chip(`${e} ${n}`, on.includes(e), () => {
-      const next = on.includes(e) ? on.filter(x => x !== e) : on.length >= 4 ? on : [...on, e];
-      setTops(next); draw();
-    }))));
   }
 }
 export function initDesign() {
