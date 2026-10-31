@@ -91,6 +91,12 @@ export function removeBook(id) {
   state.books = state.books.filter(x => x.id !== id);
   changed();
 }
+// 見本の本をまとめて外す（自分の本だけにする）。外した冊数を返す
+export function removeSamples() {
+  const n = state.books.filter(b => b.sample).length;
+  if (n) { state.books = state.books.filter(b => !b.sample); changed(); }
+  return n;
+}
 export function updateBook(id, patch) {
   const b = state.books.find(x => x.id === id);
   if (b) { Object.assign(b, patch); changed(); }

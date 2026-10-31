@@ -148,7 +148,7 @@ $('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd()
 initAdd(title => toast(`「${title}」を本棚に加えました`));
 initDesign();
 initCapture();
-$('#aShoot').onclick = () => { closeAdd(); openCapture(n => { if (n) toast(`撮った本 ${n}冊を本棚に入れました`); }); };
+$('#aShoot').onclick = () => { closeAdd(); openCapture((n, r) => { if (n) toast(`撮った本 ${n}冊を本棚に入れました` + (r ? '（見本の本は外しました）' : '')); }); };
 // 目録で選んだ本まで近づいて、光らせる
 initCatalog(id => {
   setZoom(false);

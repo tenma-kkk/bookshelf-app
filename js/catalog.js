@@ -1,5 +1,5 @@
 // 収蔵品目録：自分の本棚を探す・書店で「持ってる？」を確かめる・ほしい本・保管と引き継ぎ
-import { getState, addWish, removeWish, exportData, importData } from './store.js';
+import { getState, addWish, removeWish, exportData, importData, removeSamples } from './store.js';
 import { lookup, normalizeIsbn } from './lookup.js';
 import { startScan } from './scan.js';
 
@@ -140,7 +140,8 @@ function drawKeep(body) {
   body.innerHTML = `<p class="soon">本棚・記録・ほしい本は、このスマホの中だけに保存されています。機種変更やもしものときのために、ファイルに書き出しておけます。</p>
     <div class="btns" style="margin-top:10px"><button type="button" class="go" id="expBtn">ファイルに書き出す（${n}冊）</button></div>
     <div class="fields" style="margin-top:14px"><label>書き出したファイルを読み込む<input type="file" id="impFile" accept="application/json,.json"></label></div>
-    <p class="soon" id="impMsg" hidden></p>`;
+    <p class="soon" id="impMsg" hidden></p>
+    ${getState().books.some(b => b.sample) ? '<div class="btns" style="margin-top:14px"><button type="button" id="rmSamples">見本の本をまとめて外す</button></div>' : ''}`;
   $('#expBtn').onclick = () => {
     const blob = new Blob([exportData()], { type: 'application/json' });
     const a = document.createElement('a');
@@ -150,6 +151,8 @@ function drawKeep(body) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
+  const rs = $('#rmSamples');
+  if (rs) rs.onclick = () => { const n = removeSamples(); rs.textContent = `見本の本 ${n}冊を外しました`; rs.disabled = true; };
   let pending = null;
   $('#impFile').onchange = async e => {
     const f = e.target.files[0], msg = $('#impMsg');

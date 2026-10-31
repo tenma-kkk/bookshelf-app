@@ -1,6 +1,6 @@
 // 本棚を撮る：まず本棚全体 → 上の段から1段ずつ。枠つきカメラで、まっすぐになったら自動でシャッター。
 // 1段ごとに、自動で引いた本の境目を、違う所だけタップで直してから本棚に入れる。
-import { getState, setShelf, addBook } from './store.js';
+import { getState, setShelf, addBook, removeSamples } from './store.js';
 import { putImage } from './images.js';
 
 const ROW_W = 560, PXMM = 4;   // 段の中の横幅（mm）と、切り出す細かさ（1mm あたりの点の数）
@@ -12,11 +12,11 @@ const within = (p, ms) => Promise.race([p, new Promise((_, ng) => setTimeout(() 
 
 export function openCapture(onDone) {
   done = onDone || (() => {});
-  Object.assign(S, { phase: 'all', rows: 5, row: 0, added: 0, colors: null });
+  Object.assign(S, { phase: 'all', rows: 5, row: 0, added: 0, colors: null, removedSamples: 0 });
   $('#capture').hidden = false;
   showIntro();
 }
-function close() { stopCam(); $('#capture').hidden = true; done(S.added); }
+function close() { stopCam(); $('#capture').hidden = true; done(S.added, S.removedSamples || 0); }
 
 // ---- 案内の画面 ----
 function showIntro() {
@@ -265,6 +265,8 @@ function tapLines(e) {
 
 // 直した線で本を切り分け、本の上の端から下までを1冊として本棚に入れる
 async function saveRow() {
+  // 自分の本棚を撮ったら、見本の本は外して、撮った本だけにする
+  S.removedSamples = (S.removedSamples || 0) + removeSamples();
   const { img, canvas, W, H } = ROW, d = img.data;
   const px = (x, y) => { const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2]]; }, dd = (p, q) => Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) + Math.abs(p[2] - q[2]);
   // 本のうしろ（背板）と棚板の色：本棚全体を撮っていれば、そのときの「中の色」。なければ、上と下の帯でいちばん多い色
