@@ -4,6 +4,7 @@ import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
 import { openDesign, closeDesign, initDesign } from './design.js';
 import { openCatalog, closeCatalog, initCatalog } from './catalog.js';
+import { openCapture, initCapture } from './capture.js';
 
 const $ = s => document.querySelector(s);
 const app = $('#app'), stage = $('#stage'), piece = $('#piece');
@@ -146,6 +147,8 @@ $('#aClose').onclick = closeAdd;
 $('#add').addEventListener('click', e => { if (e.target.id === 'add') closeAdd(); });
 initAdd(title => toast(`「${title}」を本棚に加えました`));
 initDesign();
+initCapture();
+$('#aShoot').onclick = () => { closeAdd(); openCapture(n => { if (n) toast(`撮った本 ${n}冊を本棚に入れました`); }); };
 // 目録で選んだ本まで近づいて、光らせる
 initCatalog(id => {
   setZoom(false);

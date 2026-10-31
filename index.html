@@ -40,6 +40,7 @@
   <div class="cover" id="wCover"></div>
   <div><div class="no" id="wNo"></div><h2 id="wTitle"></h2><div class="au" id="wAuthor"></div>
     <dl><dt>種類</dt><dd id="wFmt"></dd><dt>大きさ</dt><dd id="wSize"></dd></dl></div>
+  <div class="fields full" id="wName" hidden><div class="row2"><label>題名<input id="n_title" autocomplete="off" placeholder="あとから入れられます"></label><label>作者<input id="n_author" autocomplete="off"></label></div></div>
   <details class="mine full" id="wMine"><summary>わたしの記録 <small>自分だけに見えます</small></summary>
     <div class="fields">
       <div class="row2"><label>買った日<input id="r_bought" placeholder="例：2024年4月" autocomplete="off"></label>
@@ -55,6 +56,8 @@
 <!-- 収蔵品を加える -->
 <div class="sheet" id="add" hidden><form class="card" id="addForm" role="dialog" aria-modal="true" aria-labelledby="aHead" style="grid-template-columns:1fr" novalidate>
   <div><div class="no">収蔵品を加える</div><h2 id="aHead">本を登録する</h2></div>
+  <button type="button" class="shootBig" id="aShoot"><b>本棚を撮る</b><small>本棚全体 → 1段ずつ。並びのまま本棚に入ります</small></button>
+  <div class="or">1冊ずつ登録する</div>
   <div class="tabs" role="tablist">
     <button type="button" role="tab" data-t="scan" aria-selected="true">バーコード</button>
     <button type="button" role="tab" data-t="isbn" aria-selected="false">ISBN を入力</button>
@@ -106,6 +109,41 @@
   <button type="button" data-go="design"><b>本棚を選ぶ</b><small>本棚のデザインだけ変えられます</small></button>
   <button type="button" data-go="soon"><b>ほかの展示室へ</b><small>みんなの本棚（準備中）</small></button>
   <button type="button" data-go="keep"><b>保管と引き継ぎ</b><small>バックアップ</small></button>
+</div>
+
+<!-- 本棚を撮る -->
+<div class="capture" id="capture" hidden>
+  <section class="cpPage" id="cp_intro">
+    <div class="cpTop"><span class="cpStep" id="cpStep"></span><button type="button" class="ic" id="cpClose" aria-label="やめる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="cpBody"><h2 id="cpHead"></h2><p id="cpText"></p>
+      <p class="cpTips">コツ：正面から・明るい部屋で・手前に飛び出た本は奥へそろえる。写真はこのスマホの中だけで使います。</p>
+      <button type="button" class="pill main" id="cpGo"></button><p class="cpNote" id="cpNote" role="status"></p>
+      <button type="button" class="pill" id="cpSkip">ここで終わる</button></div>
+  </section>
+  <section class="cpCam" id="cp_cam" hidden>
+    <video id="cpVideo" playsinline muted autoplay></video>
+    <svg id="cpOv" aria-hidden="true"><path id="cpMask" fill="rgba(0,0,0,.55)" fill-rule="evenodd"/><g id="cpBrks"></g></svg>
+    <div class="cpCamTop"><span class="cpStep" id="cpCamStep"></span><span class="cpMsg" id="cpMsg"></span><span class="cpRot" id="cpRot" hidden>スマホを横向きにすると、大きくくっきり撮れます</span></div>
+    <div class="cpLevel" aria-hidden="true"><span id="cpBubble"></span></div>
+    <div class="cpCamBot"><button type="button" id="cpCamBack">もどる</button>
+      <button type="button" class="cpShutter" id="cpShutter" aria-label="撮る"><svg viewBox="0 0 72 72"><circle id="cpArc" cx="36" cy="36" r="34" fill="none" stroke="#43c06d" stroke-width="5" stroke-dasharray="0 214" transform="rotate(-90 36 36)"/></svg></button><span></span></div>
+  </section>
+  <section class="cpPage" id="cp_all" hidden>
+    <div class="cpTop"><span class="cpStep">本棚全体</span></div>
+    <div class="cpBody"><h2>読み取った本棚</h2>
+      <canvas id="cpAllCv" class="cpPhoto"></canvas>
+      <div class="cpRowsBox"><span>段の数</span><div class="stepper"><button type="button" id="cpRowsMinus" aria-label="1段へらす">−</button><b id="cpRows"></b><button type="button" id="cpRowsPlus" aria-label="1段ふやす">＋</button></div></div>
+      <div class="cpColors"><span><i id="cpFrame"></i>わく</span><span><i id="cpInner"></i>中</span><button type="button" class="pill" id="cpUseColors">この色の本棚にする</button></div>
+      <button type="button" class="pill main" id="cpAllOk">1段目を撮る</button><button type="button" class="pill" id="cpAllRetake">撮り直す</button></div>
+  </section>
+  <section class="cpPage" id="cp_row" hidden>
+    <div class="cpTop"><span class="cpStep" id="cpRowHead"></span></div>
+    <div class="cpBody"><p class="cpCount" id="cpCount"></p>
+      <div class="cpFix"><div class="cpFixIn"><img id="cpRowImg" alt="撮った段（まっすぐに直したもの）"><svg id="cpLines" preserveAspectRatio="none"></svg></div></div>
+      <p class="cpTips">黄色の線が本と本の境目です。線のない所をタップすると増え、線をタップすると消えます。左右にスクロールできます。</p>
+      <div class="cpBtns"><button type="button" class="pill" id="cpReset">自動の線にもどす</button><button type="button" class="pill" id="cpRowRetake">撮り直す</button></div>
+      <button type="button" class="pill main" id="cpRowOk">本棚に入れる</button></div>
+  </section>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
