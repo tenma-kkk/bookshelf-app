@@ -2,7 +2,7 @@
 import { getState, onChange, setLight, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd } from './sheets.js';
-import { noteOf, applyRoom, openDesign, closeDesign, initDesign } from './design.js';
+import { openDesign, closeDesign, initDesign } from './design.js';
 import { openCatalog, closeCatalog, initCatalog } from './catalog.js';
 
 const $ = s => document.querySelector(s);
@@ -12,15 +12,9 @@ let zoom = false, rehang = false;
 function draw() {
   const st = getState();
   app.classList.toggle('night', st.light === 'night');
-  applyRoom(app, st.room);
-  const { rows, count } = render(piece, { w: app.clientWidth, h: app.clientHeight });
-  $('#pNo').textContent = `作品 No.${st.no}`;
-  $('#pTitle').textContent = st.shelf.name;
-  $('#pMat').textContent = `${noteOf(st.shelf)}　横幅 56cm`;
-  $('#pFacts').textContent = `${count}冊　${Math.max(rows, 1)}段　${st.since}年から`;
+  const { count } = render(piece, { w: app.clientWidth, h: app.clientHeight });
   $('#mark').innerHTML = `<b>No.${st.no}</b>　の本棚`;
   $('#empty').hidden = count > 0;
-  $('#plaque').hidden = count === 0;
 }
 
 const SCALE = 2.6;

@@ -1,6 +1,6 @@
-// 展示室の設え：本棚のデザイン（選ぶ・自分で作る）・壁と床
+// 本棚を選ぶ：変えられるのは本棚のデザイン（選ぶ・自分で作る）だけ。展示室（壁・床）は固定
 // 小物（飾り）は、背表紙のリアルさに見合う質にできないので置かない（2026-10-31 決定）
-import { getState, setShelf, setRoom } from './store.js';
+import { getState, setShelf } from './store.js';
 
 export const WOODS = {
   oak: { name: 'オーク', frame: '#c89b65', inner: '#b5854f' },
@@ -18,9 +18,6 @@ export const PRESETS = {
   navy: { name: 'ネイビー×真鍮', mat: 'paint', frame: '#23395b', inner: '#1b2c47', top: 'same', brass: true },
 };
 const MATS = { paint: 'つるっと塗装', oak: 'オーク', walnut: 'ウォールナット無垢', ebony: '黒檀', steel: 'スチール' };
-export const WALLS = { gallery: '展示室の白い壁', plaster: 'しっくい', brick: 'レンガ', panel: '木の羽目板', navy: '濃紺', damask: 'ダマスク柄' };
-export const FLOORS = { gallery: '展示室の床', wood: 'フローリング', herring: 'ヘリンボーン', carpet: 'じゅうたん', marble: '大理石' };
-const DARK_WALLS = new Set(['brick', 'navy', 'damask']);
 const FRAME_COLORS = ['#ffffff', '#f7f6f2', '#e9e1d2', '#c9b79c', '#8a8f86', '#23395b', '#2f4f3e', '#7a2e2e', '#151515'];
 const INNER_COLORS = [null, '#f2cf1d', '#c0392b', '#8ecae6', '#f3f1ec', '#3a2414', '#2f6b4f', '#262626'];
 
@@ -42,24 +39,6 @@ export function styleCase(c, sh) {
   c.classList.toggle('top-marble', sh.top === 'marble');
   c.classList.toggle('brass', !!sh.brass);
 }
-// 説明札の素材の行
-export function noteOf(sh) {
-  if (sh.preset && sh.preset !== 'custom') {
-    const p = PRESETS[sh.preset];
-    if (sh.preset === 'mine') return '白いわく・黄色の中';
-    return p.name;
-  }
-  const parts = [MATS[sh.mat]];
-  if (sh.top === 'marble') parts.push('大理石の天板');
-  if (sh.brass) parts.push('真鍮の金具');
-  return parts.join('・');
-}
-// 壁と床を展示室に当てる（暗い壁のときは文字を明るく）
-export function applyRoom(app, room) {
-  app.dataset.wall = room.wall;
-  app.dataset.floor = room.floor;
-  app.classList.toggle('darkwall', DARK_WALLS.has(room.wall));
-}
 
 function swatchStyle(sh) {
   const { frame, inner } = colorsOf(sh);
@@ -69,8 +48,7 @@ function swatchStyle(sh) {
 
 // ---- 設えの札 ----
 const $ = s => document.querySelector(s);
-let tab = 'shelf';
-export function openDesign() { tab = 'shelf'; draw(); $('#design').hidden = false; $('#app').classList.add('designing'); }
+export function openDesign() { draw(); $('#design').hidden = false; $('#app').classList.add('designing'); }
 export function closeDesign() { $('#design').hidden = true; $('#app').classList.remove('designing'); }
 
 function chip(label, on, onClick, style) {
@@ -104,9 +82,8 @@ function colorRow(list, cur, onPick, allowSame) {
 
 function draw() {
   const st = getState(), sh = st.shelf, body = $('#dBody');
-  document.querySelectorAll('#design .tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.t === tab));
   body.innerHTML = '';
-  if (tab === 'shelf') {
+  {
     body.appendChild(group('デザインから選ぶ', Object.entries(PRESETS).map(([k, p]) =>
       chip(p.name, sh.preset === k, () => { setShelf({ ...p, name: sh.name, preset: k }); draw(); }, swatchStyle(p))), 'swgrid'));
     const mk = [];
@@ -127,12 +104,7 @@ function draw() {
     mk.forEach(x => d.appendChild(x));
     body.appendChild(d);
   }
-  if (tab === 'room') {
-    body.appendChild(group('壁', Object.entries(WALLS).map(([k, n]) => chip(n, st.room.wall === k, () => { setRoom({ wall: k }); draw(); }))));
-    body.appendChild(group('床', Object.entries(FLOORS).map(([k, n]) => chip(n, st.room.floor === k, () => { setRoom({ floor: k }); draw(); }))));
-  }
 }
 export function initDesign() {
-  document.querySelectorAll('#design .tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
   $('#dClose').onclick = closeDesign;
 }
