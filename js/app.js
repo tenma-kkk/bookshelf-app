@@ -21,6 +21,8 @@ const SCALE = 2.6;
 let pan = { x: 0, y: 0 };
 function applyZoom() { stage.style.transform = zoom ? `translate(${pan.x}px,${pan.y}px) scale(${SCALE})` : ''; }
 function setZoom(on, x, y) {
+  cancelAnimationFrame(glide);
+  stage.classList.remove('panning');
   zoom = on;
   pan = { x: 0, y: 0 };
   if (on && x !== undefined) stage.style.transformOrigin = `${x}px ${y}px`;
@@ -32,29 +34,61 @@ function setZoom(on, x, y) {
   $('#zoomPlus').setAttribute('d', on ? 'M7.5 10.5h6' : 'M10.5 7.5v6M7.5 10.5h6');
 }
 
-// 近づいたあとは、指でなぞって左右・上下に動かせる（本棚がまん中から外れきらない範囲で）
-let drag = null;
+// 近づいたあとは、指でなぞって左右・上下に動かせる
+// なめらかにするため：動かせる範囲はなぞり始めに1回だけ測る／画面の書きかえは1コマに1回／
+// 指を離すと少し滑ってから止まる／端を越えたら、ゴムのようにやわらかく引き戻す
+let drag = null, glide = 0, frame = 0;
+function paint() { if (frame) return; frame = requestAnimationFrame(() => { frame = 0; applyZoom(); }); }
+function bounds() {
+  // 本棚の端が画面のまん中を越えない範囲（いまの位置からの動かせる量）
+  const c = piece.querySelector('.case').getBoundingClientRect(), a = app.getBoundingClientRect();
+  const cx = a.left + a.width / 2, cy = a.top + a.height / 2;
+  return { minX: pan.x + (cx - c.right), maxX: pan.x + (cx - c.left), minY: pan.y + (cy - c.bottom), maxY: pan.y + (cy - c.top) };
+}
+const rubber = (v, min, max) => v < min ? min - (min - v) * 0.35 : v > max ? max + (v - max) * 0.35 : v;
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 stage.addEventListener('pointerdown', e => {
   if (!zoom) return;
-  drag = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y, moved: false, id: e.pointerId };
+  cancelAnimationFrame(glide);
+  drag = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y, moved: false, id: e.pointerId, b: bounds(), vx: 0, vy: 0, t: performance.now(), lx: e.clientX, ly: e.clientY };
 });
 stage.addEventListener('pointermove', e => {
   if (!drag || e.pointerId !== drag.id || document.querySelector('.ghost')) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  if (!drag.moved && Math.hypot(dx, dy) < 8) return;
-  if (!drag.moved) { drag.moved = true; stage.classList.add('panning'); try { stage.setPointerCapture(e.pointerId); } catch (err) { /* 捕まえられなくても動かせる */ } }
-  const next = { x: drag.px + dx, y: drag.py + dy };
-  // 本棚の端が画面のまん中を越えないように止める
-  const c = piece.querySelector('.case').getBoundingClientRect(), a = app.getBoundingClientRect();
-  const cx = a.left + a.width / 2, cy = a.top + a.height / 2, ddx = next.x - pan.x, ddy = next.y - pan.y;
-  if (c.left + ddx > cx || c.right + ddx < cx) next.x = pan.x;
-  if (c.top + ddy > cy || c.bottom + ddy < cy) next.y = pan.y;
-  pan = next;
-  applyZoom();
+  if (!drag.moved) {
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+    // 動き出した位置から数える（最初にカクッと跳ばないように）
+    drag.moved = true; drag.x = e.clientX; drag.y = e.clientY;
+    stage.classList.add('panning');
+    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* 捕まえられなくても動かせる */ }
+  }
+  const now = performance.now(), dt = Math.max(1, now - drag.t);
+  drag.vx = 0.8 * ((e.clientX - drag.lx) / dt) + 0.2 * drag.vx;
+  drag.vy = 0.8 * ((e.clientY - drag.ly) / dt) + 0.2 * drag.vy;
+  drag.t = now; drag.lx = e.clientX; drag.ly = e.clientY;
+  const b = drag.b;
+  pan = { x: rubber(drag.px + e.clientX - drag.x, b.minX, b.maxX), y: rubber(drag.py + e.clientY - drag.y, b.minY, b.maxY) };
+  paint();
 });
 const endDrag = () => {
-  if (drag && drag.moved) { stage.dataset.justDragged = '1'; setTimeout(() => delete stage.dataset.justDragged, 60); }
-  stage.classList.remove('panning');
+  if (drag && drag.moved) {
+    stage.dataset.justDragged = '1'; setTimeout(() => delete stage.dataset.justDragged, 60);
+    // 指を離したら、そのときの勢いで少し滑って止まる。端を越えていたら、やわらかく戻す
+    const b = drag.b;
+    let vx = drag.vx * 16, vy = drag.vy * 16;
+    if (performance.now() - drag.t > 80) { vx = 0; vy = 0; }
+    const step = () => {
+      vx *= 0.92; vy *= 0.92;
+      let x = pan.x + vx, y = pan.y + vy;
+      const tx = clamp(x, b.minX, b.maxX), ty = clamp(y, b.minY, b.maxY);
+      x += (tx - x) * 0.25; y += (ty - y) * 0.25;
+      if (x !== tx) vx *= 0.6;
+      if (y !== ty) vy *= 0.6;
+      pan = { x, y }; applyZoom();
+      if (Math.abs(vx) + Math.abs(vy) > 0.2 || Math.abs(tx - x) + Math.abs(ty - y) > 0.5) glide = requestAnimationFrame(step);
+      else { pan = { x: tx, y: ty }; applyZoom(); stage.classList.remove('panning'); }
+    };
+    glide = requestAnimationFrame(step);
+  } else stage.classList.remove('panning');
   drag = null;
 };
 stage.addEventListener('pointerup', endDrag);
