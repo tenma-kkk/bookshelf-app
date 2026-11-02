@@ -36,7 +36,7 @@ function empty() {
     style: null,     // 本棚のスタイル（shoten 明るい木の書店／koshoten 古書店／white 白い棚／wall 壁一面）
     cols: 1,         // 1段を左右いくつの区画に仕切るか
     wide: 1,         // 本棚の横幅（壁一面は広い）
-    // 区画（見出しの札）。end＝段の端の支え方 { mode: lean|bookend|flat|none, kind: steel|brass|black|wood }、flat＝平積みにする本（下から順）
+    // 区画（見出しの札）。end＝段の端の支え方 { mode: lean|bookend|flat|none, kind: black|wood（昔の steel・brass は黒として表示） }、flat＝平積みにする本（下から順）
     sections: [],
     looseEnd: null, looseFlat: [],   // 区画に入れていない本の、端の支え方と平積み
     books: [],

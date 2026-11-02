@@ -1,6 +1,6 @@
 // 店内の本棚：本を実寸で段と区画に流し込み、画面のまん中に1台だけ置く（上に名札が下がる）
 import { FORMATS, SHELF, thickness, getState, moveBook } from './store.js';
-import { styleCase } from './design.js';
+import { styleCase, endKind } from './design.js';
 import { imageUrl } from './images.js';
 
 const GAP = 0.6; // 本と本のすき間（mm）
@@ -187,7 +187,7 @@ function cellEl(cell, s, rowH, ri, curate) {
     if (b && !b.classList.contains('photo') && cell.free > 45 && el.children[el.children.length - 2] === b) { b.classList.add('lean', 'l1'); a.classList.add('lean', 'l2'); }
     else a.classList.add('lean', 'l1');
   }
-  if (mode === 'bookend' && cell.items.length) el.insertAdjacentHTML('beforeend', `<i class="bookend ${end ? end.kind || 'steel' : 'steel'}" aria-hidden="true"></i>`);
+  if (mode === 'bookend' && cell.items.length) el.insertAdjacentHTML('beforeend', `<i class="bookend ${endKind(end && end.kind)}" aria-hidden="true"></i>`);
   if (cell.flat.length) {
     const st = document.createElement('div');
     st.className = 'stack';

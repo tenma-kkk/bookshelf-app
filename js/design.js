@@ -25,7 +25,9 @@ export const STYLES = {
   wall: { name: '壁一面', sub: '本棚を何台も横に並べる', cols: 3, wide: 1.8, shelf: { mat: 'paint', frame: '#2a2622', inner: '#c9a678', top: 'same', brass: false } },
 };
 const ENDS = [['bookend', '本立て'], ['flat', '平積み'], ['lean', '寄りかからせる'], ['none', 'なし']];
-const KINDS = [['steel', '銀'], ['brass', '真鍮'], ['black', '黒'], ['wood', '木']];
+// 本立ては黒と木だけ。銀・真鍮は本物の金属に見えないので外した（2026-11-02 決定）
+const KINDS = [['black', '黒'], ['wood', '木']];
+export const endKind = k => (k === 'wood' ? 'wood' : 'black');
 const MAXFLAT = 6;
 const MATS = { paint: 'つるっと塗装', oak: 'オーク', walnut: 'ウォールナット無垢', ebony: '黒檀', steel: 'スチール' };
 const FRAME_COLORS = ['#ffffff', '#f7f6f2', '#e9e1d2', '#c9b79c', '#8a8f86', '#23395b', '#2f4f3e', '#7a2e2e', '#151515'];
@@ -43,9 +45,10 @@ export function styleCase(c, sh) {
   const { frame, inner } = colorsOf(sh);
   c.style.setProperty('--frame', frame);
   c.style.setProperty('--inner', inner);
-  c.style.setProperty('--edge', sh.brass ? '#c9a24a' : (lum(inner) > 0.5 ? shade(inner, 0.1) : shade(inner, -0.1)));
+  c.style.setProperty('--edge', lum(inner) > 0.5 ? shade(inner, 0.1) : shade(inner, -0.1));
   c.classList.toggle('grain', !!WOODS[sh.mat]);
   c.classList.toggle('steel', sh.mat === 'steel');
+  c.classList.toggle('ebony', sh.mat === 'ebony');
   c.classList.toggle('top-marble', sh.top === 'marble');
   c.classList.toggle('brass', !!sh.brass);
 }
@@ -101,11 +104,11 @@ function styleSwatch(k) {
 function endBox(g) {
   const st = getState(), box = document.createElement('div');
   box.className = 'endBox';
-  const e = g.end || { mode: 'auto', kind: 'steel' };
+  const e = g.end || { mode: 'auto', kind: 'black' };
   const set = patch => { updateSection(g.id, { end: { ...e, ...patch } }); draw(); };
   box.appendChild(group('端の支え方', [chip('おまかせ', e.mode === 'auto', () => { updateSection(g.id, { end: null }); draw(); }),
     ...ENDS.map(([v, n]) => chip(n, e.mode === v, () => set({ mode: v })))]));
-  if (e.mode === 'bookend') box.appendChild(group('本立ての種類', KINDS.map(([v, n]) => chip(n, (e.kind || 'steel') === v, () => set({ kind: v })))));
+  if (e.mode === 'bookend') box.appendChild(group('本立ての種類', KINDS.map(([v, n]) => chip(n, endKind(e.kind) === v, () => set({ kind: v })))));
   if (e.mode === 'flat') {
     const books = st.books.filter(b => g.id ? b.sec === g.id : !st.sections.some(x => x.id === b.sec));
     const flat = (g.flat || []).filter(id => books.some(b => b.id === id));
