@@ -1,4 +1,4 @@
-// 展示室の本棚：本を実寸で段に流し込み、画面のまん中に1台だけ置く
+// 店内の本棚：本を実寸で段に流し込み、画面のまん中に1台だけ置く（上に名札が下がる）
 import { FORMATS, SHELF, thickness, getState, moveBook } from './store.js';
 import { styleCase } from './design.js';
 import { imageUrl } from './images.js';
@@ -11,7 +11,7 @@ function ink(hex) {
 }
 
 // 段に流し込む（入りきらなければ次の段へ。段は下にどこまでも増える）
-export function layout(books) {
+export function layout(books, minRows = SHELF.minRows) {
   const rows = [];
   let cur = [], w = 0;
   for (const b of books) {
@@ -20,7 +20,7 @@ export function layout(books) {
     cur.push(b); w += t;
   }
   if (cur.length) rows.push(cur);
-  while (rows.length < SHELF.minRows) rows.push([]);
+  while (rows.length < minRows) rows.push([]);
   return rows;
 }
 
@@ -46,17 +46,23 @@ function spineEl(b, s) {
   return el;
 }
 
-// 画面の大きさに合わせて、本棚全体が展示室に収まる倍率を決める
-export function render(piece, area) {
-  const st = getState();
-  const rows = layout(st.books);
+// 画面の大きさに合わせて、本棚全体が店内に収まる倍率を決める
+// data を渡すと、その棚（ほかの人の棚）を描く。渡さなければ自分の棚
+export function render(piece, area, data) {
+  const st = data || { ...getState(), name: 'わたしの棚' };
+  const rows = layout(st.books, st.minRows);
   const fwMm = 18, bhMm = 16;
   const rowHs = rows.map(r => Math.max(SHELF.rowH, Math.max(0, ...r.map(b => b.h || (FORMATS[b.format] || FORMATS.shiroku).h)) + 12));
   const totalH = rowHs.reduce((a, h) => a + h + bhMm, 0) + fwMm * 3;
-  // 最初から本棚全体が大きく映る大きさ（上のボタン・下の「近づいて見る」の分をあける）
-  const s = Math.min((area.w - 24) / (SHELF.inner + fwMm * 2), (area.h - 150) / totalH);
+  // 最初から本棚全体が大きく映る大きさ（天井・名札・下の「近づいて見る」の分をあける）
+  const s = Math.min((area.w - 24) / (SHELF.inner + fwMm * 2), (area.h - 200) / totalH);
   const fw = fwMm * s;
   piece.innerHTML = '';
+  const sign = document.createElement('div');
+  sign.className = 'sign';
+  sign.textContent = st.name;
+  if (st.sampleShelf) sign.insertAdjacentHTML('beforeend', '<small>見本</small>');
+  piece.appendChild(sign);
   const c = document.createElement('div');
   c.className = 'case';
   c.style.cssText = `--fw:${fw}px;--bh:${Math.max(3, bhMm * s)}px;width:${SHELF.inner * s + fw * 2}px`;
