@@ -1,9 +1,17 @@
-// 展示室の本棚：本を実寸で段に流し込み、画面のまん中に1台だけ置く
+// 店内の本棚：本を実寸で段に流し込み、画面のまん中に1台だけ置く（上に名札が下がる）
 import { FORMATS, SHELF, thickness, getState, moveBook } from './store.js';
 import { styleCase } from './design.js';
 import { imageUrl } from './images.js';
 
 const GAP = 0.6; // 本と本のすき間（mm）
+const LEAN = 9; // 段の端の本が、左の本に寄りかかる角度（度）
+
+// 本ごとに決まった小さなゆらぎ（-1〜1）。同じ本はいつも同じ値になる
+function wobble(id) {
+  let h = 0;
+  for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  return ((h >>> 0) % 1000) / 500 - 1;
+}
 
 function ink(hex) {
   const n = parseInt(hex.slice(1), 16);
@@ -11,7 +19,7 @@ function ink(hex) {
 }
 
 // 段に流し込む（入りきらなければ次の段へ。段は下にどこまでも増える）
-export function layout(books) {
+export function layout(books, minRows = SHELF.minRows) {
   const rows = [];
   let cur = [], w = 0;
   for (const b of books) {
@@ -20,21 +28,22 @@ export function layout(books) {
     cur.push(b); w += t;
   }
   if (cur.length) rows.push(cur);
-  while (rows.length < SHELF.minRows) rows.push([]);
+  while (rows.length < minRows) rows.push([]);
   return rows;
 }
 
 function spineEl(b, s) {
   const f = FORMATS[b.format] || FORMATS.shiroku;
-  const w = thickness(b) * s, h = (b.h || f.h) * s;
+  // 同じ判型でも、出版社や刷りで高さがほんの少しちがう（文庫は±1.5mm、ほかは±4mm）
+  const w = thickness(b) * s, h = (b.h || f.h + wobble(b.id) * (b.format === 'bunko' ? 1.5 : 4)) * s;
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'bk';
   el.dataset.id = b.id;
   el.setAttribute('aria-label', b.title ? `${b.title}（${b.author || '作者不明'}）` : '題名がまだの本');
-  el.style.cssText = `width:${w}px;height:${h}px;background:${b.color || '#e9e4d8'};color:${ink(b.color || '#e9e4d8')}`;
+  el.style.cssText = `width:${w}px;height:${h}px;background-color:${b.color || '#e9e4d8'};color:${ink(b.color || '#e9e4d8')};--w:${w}px;--lm:${h * Math.sin(LEAN * Math.PI / 180)}px`;
   const fs = Math.max(3, Math.min(w * 0.5, 14));
-  el.innerHTML = `<span class="t" style="font-size:${fs}px"></span><span class="a" style="font-size:${fs * 0.62}px"></span>`;
+  el.innerHTML = `<i class="no"></i><span class="t" style="font-size:${fs}px"></span><span class="a" style="font-size:${fs * 0.62}px"></span><i class="pub"></i>`;
   el.querySelector('.t').textContent = b.title;
   el.querySelector('.a').textContent = b.author || '';
   // 撮った本は、写真から切り出した背表紙を貼る（描き直しは次の段階）
@@ -46,31 +55,50 @@ function spineEl(b, s) {
   return el;
 }
 
-// 画面の大きさに合わせて、本棚全体が展示室に収まる倍率を決める
-export function render(piece, area) {
-  const st = getState();
-  const rows = layout(st.books);
+// 画面の大きさに合わせて、本棚全体が店内に収まる倍率を決める
+// data を渡すと、その棚（ほかの人の棚）を描く。渡さなければ自分の棚
+export function render(piece, area, data) {
+  const st = data || { ...getState(), name: 'わたしの棚' };
+  const rows = layout(st.books, st.minRows);
   const fwMm = 18, bhMm = 16;
   const rowHs = rows.map(r => Math.max(SHELF.rowH, Math.max(0, ...r.map(b => b.h || (FORMATS[b.format] || FORMATS.shiroku).h)) + 12));
   const totalH = rowHs.reduce((a, h) => a + h + bhMm, 0) + fwMm * 3;
-  // 最初から本棚全体が大きく映る大きさ（上のボタン・下の「近づいて見る」の分をあける）
-  const s = Math.min((area.w - 24) / (SHELF.inner + fwMm * 2), (area.h - 150) / totalH);
+  // 最初から本棚全体が大きく映る大きさ（天井・名札・下の「近づいて見る」の分をあける）
+  const s = Math.min((area.w - 24) / (SHELF.inner + fwMm * 2), (area.h - 200) / totalH);
   const fw = fwMm * s;
   piece.innerHTML = '';
+  const sign = document.createElement('div');
+  sign.className = 'sign';
+  sign.textContent = st.name;
+  if (st.sampleShelf) sign.insertAdjacentHTML('beforeend', '<small>見本</small>');
+  piece.appendChild(sign);
   const c = document.createElement('div');
   c.className = 'case';
   c.style.cssText = `--fw:${fw}px;--bh:${Math.max(3, bhMm * s)}px;width:${SHELF.inner * s + fw * 2}px`;
   styleCase(c, st.shelf);
   c.innerHTML = '<div class="crown"></div>';
 
-  rows.forEach(r => {
+  rows.forEach((r, i) => {
     const row = document.createElement('div');
     row.className = 'shelfRow';
     // 背の高い本（撮った本など）が入る段は、その本に合わせて段を高くする
     const tallest = Math.max(0, ...r.map(b => b.h || (FORMATS[b.format] || FORMATS.shiroku).h));
     row.style.height = Math.max(SHELF.rowH, tallest + 12) * s + 'px';
-    r.forEach(b => row.appendChild(spineEl(b, s)));
+    const els = r.map(b => spineEl(b, s));
+    els.forEach(el => row.appendChild(el));
+    // 段にすき間があれば、端の本を左に寄りかからせる段と、本立てで支える段を交互に
+    const free = SHELF.inner - r.reduce((a, b) => a + thickness(b) + GAP, 0);
+    if (r.length > 2 && free > 30) {
+      if (i % 2 === 0) {
+        els[els.length - 1].classList.add('lean', 'l1');
+        if (free > 45 && !els[els.length - 2].classList.contains('photo')) {
+          els[els.length - 2].classList.add('lean', 'l1');
+          els[els.length - 1].classList.replace('l1', 'l2');
+        }
+      } else row.insertAdjacentHTML('beforeend', '<i class="bookend" aria-hidden="true"></i>');
+    }
     c.appendChild(row);
+    c.insertAdjacentHTML('beforeend', '<div class="board"></div>');
   });
   c.insertAdjacentHTML('beforeend', '<div class="plinth"></div>');
   piece.appendChild(c);

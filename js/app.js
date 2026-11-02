@@ -1,13 +1,14 @@
-// 全体のつなぎ：展示室・照明・近づく・館内案内・作品解説
+// 全体のつなぎ：店内・照明・近づく・となりの棚へ・メニュー・本の画面
 import { getState, onChange, setLight, setLamp, addSamples } from './store.js';
 import { render, enableRehang } from './shelf.js';
 import { openWork, closeWork, openAdd, closeAdd, initAdd, onReshoot } from './sheets.js';
 import { openDesign, closeDesign, initDesign } from './design.js';
 import { openCatalog, closeCatalog, initCatalog } from './catalog.js';
 import { openCapture, initCapture } from './capture.js';
+import { NEIGHBORS } from './neighbors.js';
 
 const $ = s => document.querySelector(s);
-const app = $('#app'), stage = $('#stage'), piece = $('#piece');
+const app = $('#app'), stage = $('#stage'), piece = $('#piece'), street = $('#street');
 let zoom = false, rehang = false;
 
 function draw() {
@@ -15,9 +16,81 @@ function draw() {
   app.classList.toggle('night', st.light === 'night');
   lamp(st.lamp ?? 1);
   const { count } = render(piece, { w: app.clientWidth, h: app.clientHeight });
-  $('#mark').innerHTML = `<b>No.${st.no}</b>　の本棚`;
+  $('#mark').textContent = '本屋';
   $('#empty').hidden = count > 0;
 }
+
+// ---- となりの棚へ：スワイプ（または左右の矢印）で、約1.3秒かけて移る。移るときは紙をめくる音 ----
+// 棚どうしは「画面1枚ぶん＋すき間」離して置くので、いま見ている棚以外は画面に入らない
+const GAP = 120;
+const nbStages = NEIGHBORS.map(n => {
+  const st = document.createElement('div');
+  st.className = 'stage nb';
+  st.innerHTML = '<div class="piece"></div>';
+  street.appendChild(st);
+  return { n, st };
+});
+const MIN = Math.min(0, ...NEIGHBORS.map(n => n.at)), MAX = Math.max(0, ...NEIGHBORS.map(n => n.at));
+let at = 0, swipe = null;
+function lay() {
+  const w = app.clientWidth;
+  const put = (el, i) => { el.style.left = i * (w + GAP) + 'px'; el.style.right = -i * (w + GAP) + 'px'; };
+  put(stage, 0);
+  nbStages.forEach(({ n, st }) => { put(st, n.at); render(st.firstChild, { w, h: app.clientHeight }, n); });
+  slide(0, false);
+}
+function slide(dx, moving) {
+  street.classList.toggle('moving', moving);
+  street.style.transform = `translateX(${-at * (app.clientWidth + GAP) + dx}px)`;
+}
+const page = new Audio('sounds/page1.mp3');
+page.preload = 'auto';
+function goTo(n, quiet) {
+  n = Math.max(MIN, Math.min(MAX, n));
+  if (n !== at && !quiet) { try { page.currentTime = 0; page.play().catch(() => {}); } catch (e) { /* 音が出せなくても移る */ } }
+  at = n;
+  slide(0, !quiet);
+  app.classList.toggle('away', at !== 0);
+  $('#navPrev').hidden = at === MIN;
+  $('#navNext').hidden = at === MAX;
+}
+const canSwipe = () => !zoom && !rehang && !app.classList.contains('designing');
+street.addEventListener('pointerdown', e => {
+  if (!canSwipe() || e.button > 0) return;
+  swipe = { x: e.clientX, y: e.clientY, dx: 0, lock: null, id: e.pointerId };
+});
+street.addEventListener('pointermove', e => {
+  if (!swipe || e.pointerId !== swipe.id) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+  if (!swipe.lock) {
+    if (Math.hypot(dx, dy) < 10) return;
+    swipe.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (swipe.lock === 'x') try { street.setPointerCapture(e.pointerId); } catch (err) { /* なくても動く */ }
+  }
+  if (swipe.lock !== 'x') return;
+  // 端の棚より先は、ゴムのように少しだけ動く
+  const edge = (dx > 0 && at === MIN) || (dx < 0 && at === MAX);
+  swipe.dx = edge ? dx * 0.3 : dx;
+  slide(swipe.dx, false);
+});
+const endSwipe = () => {
+  if (!swipe) return;
+  if (swipe.lock === 'x') {
+    stage.dataset.justDragged = '1'; setTimeout(() => delete stage.dataset.justDragged, 60);
+    const far = Math.abs(swipe.dx) > app.clientWidth * 0.18;
+    if (far) goTo(at + (swipe.dx < 0 ? 1 : -1)); else slide(0, true);
+  }
+  swipe = null;
+};
+street.addEventListener('pointerup', endSwipe);
+street.addEventListener('pointercancel', endSwipe);
+$('#navPrev').onclick = () => goTo(at - 1);
+$('#navNext').onclick = () => goTo(at + 1);
+// ほかの人の棚（見本）の本をタップしたとき
+nbStages.forEach(({ st }) => st.addEventListener('click', e => {
+  if (stage.dataset.justDragged) return;
+  if (e.target.closest('.case')) toast('見本の棚です。ほかの人の本物の棚は、あとで見られるようにします');
+}));
 
 // ダウンライト：明るさは右の真ん中のつまみ（本棚のデザイン変更を開いている間だけ出る）で決める
 function lamp(v) {
@@ -39,7 +112,7 @@ function setZoom(on, x, y) {
   applyZoom();
   app.classList.toggle('zoomed', on);
   $('#hint').textContent = rehang ? '本を長押しして、置きたい所まで動かします'
-    : on ? '指でなぞると動かせます。本をタップすると作品解説' : '本棚をタップしても近づけます';
+    : on ? '指でなぞると動かせます。本をタップすると本の画面' : '左右にスワイプすると、となりの棚へ';
   $('#zoomLabel').textContent = on ? '離れる' : '近づいて見る';
   $('#zoomPlus').setAttribute('d', on ? 'M7.5 10.5h6' : 'M10.5 7.5v6M7.5 10.5h6');
 }
@@ -104,7 +177,7 @@ const endDrag = () => {
 stage.addEventListener('pointerup', endDrag);
 stage.addEventListener('pointercancel', endDrag);
 
-// 本棚をタップで近づく（もう一度で離れる）。近づいた状態で本をタップすると作品解説
+// 本棚をタップで近づく（もう一度で離れる）。近づいた状態で本をタップすると本の画面
 stage.addEventListener('click', e => {
   if (stage.dataset.justDragged) return;
   const bk = e.target.closest('.bk');
@@ -123,10 +196,10 @@ $('#zoomBtn').onclick = () => {
   setZoom(true, b.left + b.width / 2 - r.left, b.top + b.height / 2 - r.top);
 };
 
-// 照明（昼の展示室／夜の展示室）
+// 照明（昼の店内／夜の店内）
 $('#lightBtn').onclick = () => setLight(getState().light === 'night' ? 'day' : 'night');
 
-// 館内案内
+// メニュー
 const menu = $('#menu');
 $('#menuBtn').onclick = () => { menu.hidden = false; $('#mClose').focus(); };
 $('#mClose').onclick = () => { menu.hidden = true; };
@@ -134,12 +207,13 @@ menu.addEventListener('click', e => {
   const go = e.target.closest('[data-go]');
   if (!go) return;
   menu.hidden = true;
+  if (go.dataset.go === 'next') { goTo(at === 0 ? 1 : 0); return; }
+  if (at !== 0) goTo(0, true);
   if (go.dataset.go === 'rehang') toggleRehang(true);
   if (go.dataset.go === 'add') openAdd();
   if (go.dataset.go === 'design') openDesign();
   if (go.dataset.go === 'catalog') openCatalog('find');
   if (go.dataset.go === 'keep') openCatalog('keep');
-  if (go.dataset.go === 'soon') toast('この部屋は、まだ準備中です');
 });
 function toggleRehang(on) {
   rehang = on;
@@ -149,7 +223,7 @@ function toggleRehang(on) {
 }
 $('#rehangDone').onclick = () => toggleRehang(false);
 
-// 作品解説・収蔵品を加える
+// 本の画面・本の登録
 $('#wClose').onclick = closeWork;
 $('#work').addEventListener('click', e => { if (e.target.id === 'work') closeWork(); });
 $('#aClose').onclick = closeAdd;
@@ -194,6 +268,8 @@ function toast(msg) {
 }
 
 onChange(draw);
-addEventListener('resize', draw);
+addEventListener('resize', () => { draw(); lay(); });
 draw();
+lay();
+goTo(0, true);
 setZoom(false);

@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#ecebe7">
+<meta name="theme-color" content="#2d2721">
 <title>本棚</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="app" id="app">
+  <!-- 天井：照明がならぶ。壁と天井は本屋さんの店内（床はなし、本棚は壁から浮いて見える） -->
+  <div class="ceiling" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="lampSide"><small>強い</small><input type="range" id="lampLv" min="0" max="1.6" step=".1" value="1" aria-label="ダウンライトの明るさ"><small>消す</small><b>ダウンライト</b></div>
   <div class="top">
     <div class="mark" id="mark"></div>
@@ -20,10 +22,13 @@
     </div>
   </div>
 
-  <div class="stage" id="stage"><div class="piece" id="piece"></div></div>
+  <!-- 棚が横にならぶ通路。スワイプでとなりの棚へ（となりは画面に入らない間隔） -->
+  <div class="street" id="street"><div class="stage" id="stage"><div class="piece" id="piece"></div></div></div>
+  <button type="button" class="nav prev" id="navPrev" aria-label="前の棚へ"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button type="button" class="nav next" id="navNext" aria-label="次の棚へ"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
 
   <div class="empty" id="empty" hidden>
-    <h2>まだ展示がありません</h2>
+    <h2>まだ本がありません</h2>
     <p>本を加えると、この本棚に並びます。<br>まずは見本の本で試すこともできます。</p>
     <button type="button" class="pill main" id="emptyAdd">本の登録</button>
     <button type="button" class="pill" id="emptySample">見本の本を並べてみる</button>
@@ -36,7 +41,7 @@
   <div class="rehangBar" id="rehangBar" hidden>本の並び替え中<button type="button" id="rehangDone">終わる</button></div>
 </div>
 
-<!-- 作品解説 -->
+<!-- 本の画面（本をタップ） -->
 <div class="sheet" id="work" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="wTitle">
   <div class="cover" id="wCover"></div>
   <div><div class="no" id="wNo"></div><h2 id="wTitle"></h2><div class="au" id="wAuthor"></div>
@@ -52,7 +57,7 @@
       <button type="button" class="danger" id="wDelete"></button>
     </div>
   </details>
-  <div class="btns full"><button type="button" id="wClose">展示にもどる</button></div>
+  <div class="btns full"><button type="button" id="wClose">本棚にもどる</button></div>
 </div></div>
 
 <!-- 収蔵品を加える -->
@@ -86,9 +91,9 @@
   <div class="btns"><button type="button" id="aClose">やめる</button><button type="submit" class="go">本棚に加える</button></div>
 </form></div>
 
-<!-- 展示室の設え（本棚を見ながら変えられるよう、札は低め） -->
+<!-- 本棚のデザイン（本棚を見ながら変えられるよう、札は低め） -->
 <div class="sheet peek" id="design" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="dHead" style="grid-template-columns:1fr">
-  <div><div class="no">本棚のデザイン変更</div><h2 id="dHead">展示する本棚</h2></div>
+  <div><div class="no">本棚のデザイン変更</div><h2 id="dHead">わたしの棚</h2></div>
   <div id="dBody"></div>
   <div class="btns"><button type="button" class="go" id="dClose">これで飾る</button></div>
 </div></div>
@@ -98,10 +103,10 @@
   <div><div class="no">本を探す</div><h2 id="cHead">本棚の本をしらべる</h2></div>
   <div class="tabs" role="tablist"><button type="button" role="tab" data-t="find">探す</button><button type="button" role="tab" data-t="check">持ってる？</button><button type="button" role="tab" data-t="wish">ほしい本</button><button type="button" role="tab" data-t="keep">保管</button></div>
   <div id="cBody"></div>
-  <div class="btns"><button type="button" id="cClose">展示にもどる</button></div>
+  <div class="btns"><button type="button" id="cClose">本棚にもどる</button></div>
 </div></div>
 
-<!-- 館内案内 -->
+<!-- メニュー -->
 <div class="menu" id="menu" hidden>
   <button type="button" class="ic close" id="mClose" aria-label="閉じる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <h3>メニュー</h3>
@@ -109,7 +114,7 @@
   <button type="button" data-go="add"><b>本の登録</b><small></small></button>
   <button type="button" data-go="catalog"><b>本を探す</b><small>持ってる？・ほしい本も</small></button>
   <button type="button" data-go="design"><b>本棚のデザイン変更</b><small></small></button>
-  <button type="button" data-go="soon"><b>みんなの本棚</b><small>準備中</small></button>
+  <button type="button" data-go="next"><b>ほかの人の棚</b><small>いまは見本の棚</small></button>
   <button type="button" data-go="keep"><b>バックアップ</b><small></small></button>
 </div>
 
@@ -154,7 +159,7 @@
       <p id="cpAfterText"></p>
       <button type="button" class="pill main" id="cpBookGo"></button>
       <button type="button" class="pill" id="cpBookLater"></button>
-      <p class="cpTips">あとでにしても、本をタップした作品解説の「近くで撮り直す」から、いつでも撮れます。</p></div>
+      <p class="cpTips">あとでにしても、本をタップした画面の「近くで撮り直す」から、いつでも撮れます。</p></div>
   </section>
 </div>
 
