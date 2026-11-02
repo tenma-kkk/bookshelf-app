@@ -85,6 +85,33 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .rehang .bk.lean{transform:none;margin-left:0}
 /* 本立て */
 .bookend{flex:none;position:relative;width:3px;height:58%;margin-left:2px;background:linear-gradient(90deg,#9aa0a6,#e3e6ea,#7a8087);box-shadow:2px 0 3px #0005}
+.bookend.brass{background:linear-gradient(90deg,#8a6a2a,#f0d27e,#9a7a35)}
+.bookend.black{background:linear-gradient(90deg,#111,#4a4a4a,#151515)}
+.bookend.wood{width:7px;height:64%;border-radius:2px 2px 0 0;background:#b48655;background-image:linear-gradient(90deg,#0003,#fff2 30%,#0000 60%,#0004),var(--grainV);box-shadow:2px 0 4px #0005}
+/* 段 × 区画のます目。区画どうしの間は本棚のわく（仕切り板）が見える */
+.gridRow{display:flex;gap:var(--div)}
+.gridRow .shelfRow{flex:none}
+.case.wall .gridRow{gap:calc(var(--div)*1.6)}
+/* 見出しの札 */
+.plate{position:absolute;top:6%;left:50%;transform:translateX(-50%);z-index:3;max-width:92%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:#fbfaf6;color:#2b2622;font-family:var(--display);font-weight:700;font-size:max(5px,calc(var(--fw)*.62));letter-spacing:.08em;padding:.25em .8em;box-shadow:0 1px 3px #0004}
+/* 表紙を見せる本（少し後ろにもたれて立つ）と、紹介カード */
+.faceWrap{position:relative;flex:none;display:flex;align-items:flex-end;margin:0 2px 0 3px}
+.bk.face{justify-content:flex-start;align-items:flex-end;padding:8% 9%;transform:perspective(300px) rotateX(6deg);transform-origin:50% 100%;box-shadow:-1px 0 0 #0003,3px 3px 6px #0006;
+  background-image:linear-gradient(100deg,rgba(255,255,255,.16),transparent 35%,rgba(0,0,0,.16)),var(--noise);background-size:auto,220px;background-blend-mode:normal,soft-light}
+.bk.face::after{display:none}
+.bk.face .ct{writing-mode:vertical-rl;font-family:var(--display);font-weight:700;letter-spacing:.1em;line-height:1.1;max-height:80%;overflow:hidden}
+.bk.face .ca{position:absolute;left:9%;bottom:7%;writing-mode:vertical-rl;font-family:var(--display);opacity:.85}
+.pop{position:absolute;right:-38%;bottom:3%;z-index:4;background:#fffdf6;color:#3a2e24;font-family:var(--body);line-height:1.45;padding:.6em .5em .7em;
+  transform:rotate(-3deg);box-shadow:1px 2px 3px #0005;border-top:2px solid #c8442f;pointer-events:none;word-break:break-all}
+/* 平積み：寝かせて重ねる。立てた本にすき間なく寄る（本立ての代わり） */
+.stack{flex:none;align-self:flex-end;display:flex;flex-direction:column-reverse;align-items:flex-start;margin-left:-.6px}
+.bk.flat{flex:none;flex-direction:row;justify-content:flex-start;align-items:center;gap:5%;padding:0 6%;border-radius:0 1px 1px 0;box-shadow:0 1px 1px #0005;white-space:nowrap;font-family:var(--display);line-height:1}
+.bk.flat::after{background:linear-gradient(rgba(0,0,0,.36),rgba(255,255,255,.14) 18%,rgba(255,255,255,.03) 45%,rgba(0,0,0,.42))}
+.bk.flat .t,.bk.flat .a{writing-mode:horizontal-tb;padding:0;max-height:none}
+.bk.flat .t{font-weight:700;overflow:hidden;flex:1}.bk.flat .a{font-size:.7em}
+.bk.flat .pub{position:static;transform:none;flex:none;height:62%;width:auto;aspect-ratio:1}
+.bk.flat .no{display:none}
 .bk .t,.bk .a{writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;overflow:hidden;line-height:1}
 .bk .t{font-family:var(--display);font-weight:700;padding-top:6%;max-height:72%}
 .bk .a{padding-bottom:calc(var(--w)*.56 + 8%);opacity:.85;max-height:30%}
@@ -313,3 +340,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .zoomed .nav,.rehang .nav,.designing .nav{display:none}
 /* ほかの人の棚を見ているあいだは、自分の棚用のボタンを隠す */
 .away .bottom,.away .empty{display:none}
+
+/* ---- 本棚のデザイン：飾り方・スタイル・区画と札・端の支え方 ---- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip.modeCard,.chip.styleCard{border-radius:12px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 12px;font-weight:700}
+.chip.modeCard small,.chip.styleCard small{font-weight:400;font-size:10.5px;line-height:1.5;opacity:.75}
+.styles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stPv{display:grid;gap:3px;width:100%;height:46px;padding:4px;border-radius:4px;margin-bottom:4px}
+.stPv i{display:block;border-radius:1px}
+.secs .soon{margin:0}
+.secItem{border:1px solid #e3ddd2;border-radius:10px;padding:0 12px;background:#fff}
+.secItem summary{padding:12px 0;cursor:pointer;font-family:var(--display);font-weight:700;font-size:14px}
+.secItem[open]{padding-bottom:12px}
+.secRow{display:flex;gap:6px;align-items:center}
+.secRow input{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid #ddd5c8;border-radius:8px;background:#fff;color:var(--label-ink)}
+.secRow .chip{flex:none}
+.endBox .dgroup{margin-top:10px}
+.flatPick .chip{font-size:12px;padding:6px 10px;min-height:34px}
+.show .showRow{display:grid;gap:6px}
+.show .dt{font-size:11px;color:var(--label-sub)}
