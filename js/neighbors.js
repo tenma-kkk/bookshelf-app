@@ -44,8 +44,18 @@ const MINATO = mk('nm', [
   ['ペッパーズ・ゴースト', '伊坂幸太郎', 'bunko', 480, '#b0b8c0'], ['シーソーモンスター', '伊坂幸太郎', 'bunko', 480, '#e0a0a0'], ['さよならジャバウォック', '伊坂幸太郎', 'shiroku', 320, '#1a1a1a'],
 ]);
 
+// ミナトの棚は「陳列にこだわる」見本：区画と見出しの札・表紙を見せる本・紹介カード・本立て・平積み
+const MINATO_SECS = [
+  { id: 'm1', title: '殺し屋シリーズ', end: { mode: 'bookend', kind: 'brass' }, flat: [] },
+  { id: 'm2', title: 'まずはこの一冊', end: { mode: 'flat' }, flat: ['nm14', 'nm15'] },
+  { id: 'm3', title: '仙台の街の話', end: { mode: 'lean' }, flat: [] },
+];
+const inSec = { m1: ['グラスホッパー', 'マリアビートル', 'AX'], m2: ['ゴールデンスランバー', 'モダンタイムス 上', 'モダンタイムス 下'], m3: ['重力ピエロ', 'アヒルと鴨のコインロッカー', 'チルドレン', '砂漠', 'フィッシュストーリー', 'ラッシュライフ', 'オーデュボンの祈り'] };
+MINATO.forEach(b => { for (const [k, list] of Object.entries(inSec)) if (list.includes(b.title)) b.sec = k; });
+Object.assign(MINATO.find(b => b.title === 'ゴールデンスランバー'), { face: true, pop: '仙台を、ひとりで走りぬける夜。伊坂を読むならここから' });
+
 export const NEIGHBORS = [
   { at: -1, name: 'ナツメの棚', sampleShelf: true, minRows: 2, books: NATSUME, shelf: { mat: 'walnut', top: 'same', brass: false } },
   { at: 1, name: 'ハルカの棚', sampleShelf: true, minRows: 2, books: HARUKA, shelf: { mat: 'paint', frame: '#ffffff', inner: '#e9e5dd', top: 'same', brass: false } },
-  { at: 2, name: 'ミナトの棚', sampleShelf: true, minRows: 2, books: MINATO, shelf: { mat: 'paint', frame: '#23395b', inner: '#1b2c47', top: 'same', brass: true } },
+  { at: 2, name: 'ミナトの棚', sampleShelf: true, minRows: 3, books: MINATO, display: 'curate', cols: 2, sections: MINATO_SECS, looseEnd: null, looseFlat: [], shelf: { mat: 'paint', frame: '#23395b', inner: '#1b2c47', top: 'same', brass: true } },
 ];

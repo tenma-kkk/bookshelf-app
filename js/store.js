@@ -30,6 +30,15 @@ function empty() {
     wish: [],
     light: 'day',
     lamp: 1,       // ダウンライトの明るさ（0＝消す〜1.6＝強い）
+    // 飾り方：auto＝ひたすら並べる（並べる順だけ選ぶ）／curate＝陳列にこだわる（区画・札・表紙・紹介カード・端の支え方）
+    display: 'auto',
+    sort: 'manual',  // ひたすら並べるときの順：manual＝並び替えた順／author＝作家順／color＝色順
+    style: null,     // 本棚のスタイル（shoten 明るい木の書店／koshoten 古書店／white 白い棚／wall 壁一面）
+    cols: 1,         // 1段を左右いくつの区画に仕切るか
+    wide: 1,         // 本棚の横幅（壁一面は広い）
+    // 区画（見出しの札）。end＝段の端の支え方 { mode: lean|bookend|flat|none, kind: steel|brass|black|wood }、flat＝平積みにする本（下から順）
+    sections: [],
+    looseEnd: null, looseFlat: [],   // 区画に入れていない本の、端の支え方と平積み
     books: [],
   };
 }
@@ -39,7 +48,7 @@ let state = load();
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const d = JSON.parse(raw), e = empty(); return { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room } }; }
+    if (raw) { const d = JSON.parse(raw), e = empty(); return { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room }, sections: d.sections || [], looseFlat: d.looseFlat || [] }; }
   } catch (e) { /* 保存できない環境でも、空の本棚で動かす */ }
   return empty();
 }
@@ -59,6 +68,38 @@ export function setLight(light) { state.light = light; changed(); }
 export function setLamp(v) { state.lamp = v; save(); }
 export function setShelf(patch) { state.shelf = { ...state.shelf, ...patch }; changed(); }
 export function setRoom(patch) { state.room = { ...state.room, ...patch }; changed(); }
+// 飾り方・並べる順・スタイル・仕切りなど、棚全体の設定
+export function setPrefs(patch) { Object.assign(state, patch); changed(); }
+
+// ---- 区画（見出しの札） ----
+export function addSection(title) {
+  const id = 's' + Date.now().toString(36);
+  state.sections.push({ id, title, end: null, flat: [] });
+  changed();
+  return id;
+}
+export function updateSection(id, patch) {
+  if (id === null) {   // 区画に入れていない本
+    if ('end' in patch) state.looseEnd = patch.end;
+    if ('flat' in patch) state.looseFlat = patch.flat;
+  } else {
+    const s = state.sections.find(x => x.id === id);
+    if (s) Object.assign(s, patch);
+  }
+  changed();
+}
+export function removeSection(id) {
+  state.sections = state.sections.filter(x => x.id !== id);
+  state.books.forEach(b => { if (b.sec === id) delete b.sec; });
+  changed();
+}
+// 区画の順番を1つ前（-1）／後ろ（+1）へ
+export function moveSection(id, d) {
+  const i = state.sections.findIndex(x => x.id === id), j = i + d;
+  if (i < 0 || j < 0 || j >= state.sections.length) return;
+  [state.sections[i], state.sections[j]] = [state.sections[j], state.sections[i]];
+  changed();
+}
 
 // ほしい本（本人だけが見られる）
 export function addWish(item) { if (!state.wish.some(w => w.isbn === item.isbn)) { state.wish.push({ ...item, at: Date.now() }); changed(); } }
@@ -71,7 +112,7 @@ export function importData(text) {
   const d = j && j.app === 'bookshelf' ? j.data : null;
   if (!d || !Array.isArray(d.books)) throw new Error('format');
   const e = empty();
-  state = { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room }, wish: d.wish || [] };
+  state = { ...e, ...d, shelf: { ...e.shelf, ...d.shelf }, room: { ...e.room, ...d.room }, wish: d.wish || [], sections: d.sections || [], looseFlat: d.looseFlat || [] };
   changed();
   return state.books.length;
 }
@@ -111,6 +152,9 @@ export function moveBook(fromId, toId, after) {
   const from = list.findIndex(x => x.id === fromId);
   if (from < 0 || fromId === toId) return;
   const [b] = list.splice(from, 1);
+  // 陳列にこだわるときは、置いた先の本と同じ区画に入る
+  const tgt = list.find(x => x.id === toId);
+  if (state.display === 'curate' && tgt) { if (tgt.sec) b.sec = tgt.sec; else delete b.sec; }
   let to = list.findIndex(x => x.id === toId);
   if (to < 0) to = list.length; else if (after) to += 1;
   list.splice(to, 0, b);

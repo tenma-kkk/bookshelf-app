@@ -1,5 +1,7 @@
 // 作品解説（本をタップ）・わたしの記録（自分だけ）・収蔵品を加える（手で入力）
 import { FORMATS, thickness, getState, updateRecord, removeBook, addBook, updateBook, removeSamples } from './store.js';
+
+// 本の画面を開いたまま本棚が描き直されても、入力が途切れないように、並べ方の変更は描き直しのあとで画面にも反映する
 import { imageUrl, delImage } from './images.js';
 import { lookup, normalizeIsbn } from './lookup.js';
 import { startScan } from './scan.js';
@@ -50,6 +52,8 @@ export function openWork(id) {
     $('#n_title').onchange = () => { updateBook(id, { title: $('#n_title').value.trim() }); $('#wTitle').textContent = $('#n_title').value.trim() || '（題名はまだ）'; };
     $('#n_author').onchange = () => updateBook(id, { author: $('#n_author').value.trim() });
   }
+  // 並べ方：陳列にこだわるときだけ、背表紙／表紙・区画・紹介カードを選べる
+  showControls(b);
   // わたしの記録（自分の本棚のときだけ出る。ほかの人の本棚には入口ごと出さない）
   const r = b.record || {};
   $('#wMine').open = false;
@@ -70,6 +74,31 @@ export function openWork(id) {
   $('#wClose').focus();
 }
 export function closeWork() { $('#work').hidden = true; }
+
+function showControls(b) {
+  const st = getState(), curate = st.display === 'curate';
+  $('#wFaceRow').hidden = $('#wSecL').hidden = !curate;
+  $('#wShowNote').hidden = curate;
+  if (!curate) { $('#wPopL').hidden = true; return; }
+  const btns = $('#wFaceBtns');
+  btns.innerHTML = '';
+  [[false, '背表紙を見せる'], [true, '表紙を見せる']].forEach(([v, n]) => {
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = 'chip'; c.textContent = n;
+    c.setAttribute('aria-pressed', !!b.face === v);
+    c.onclick = () => { updateBook(b.id, { face: v }); showControls(b); };
+    btns.appendChild(c);
+  });
+  const sel = $('#wSec');
+  sel.innerHTML = '<option value="">区画に入れない</option>' + st.sections.map(x => `<option value="${x.id}"></option>`).join('');
+  st.sections.forEach((x, i) => { sel.options[i + 1].textContent = x.title; });
+  sel.value = st.sections.some(x => x.id === b.sec) ? b.sec : '';
+  sel.onchange = () => updateBook(b.id, { sec: sel.value || undefined });
+  $('#wPopL').hidden = !b.face;
+  const pop = $('#wPop');
+  pop.value = b.pop || '';
+  pop.onchange = () => updateBook(b.id, { pop: pop.value.trim() });
+}
 
 function ink(hex) {
   const n = parseInt(hex.slice(1), 16);
