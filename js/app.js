@@ -267,6 +267,15 @@ function toast(msg) {
   clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600);
 }
 
+// 金属のつや：スマホを傾けたり、指やマウスを動かしたりすると、光の帯が左右に動く
+let gxNext = null;
+const glint = x => {
+  if (gxNext === null) requestAnimationFrame(() => { document.documentElement.style.setProperty('--gx', gxNext + '%'); gxNext = null; });
+  gxNext = Math.round(10 + Math.min(1, Math.max(0, x)) * 80);
+};
+addEventListener('deviceorientation', e => { if (e.gamma != null) glint((e.gamma + 30) / 60); });
+addEventListener('pointermove', e => glint(e.clientX / innerWidth), { passive: true });
+
 onChange(draw);
 addEventListener('resize', () => { draw(); lay(); });
 draw();

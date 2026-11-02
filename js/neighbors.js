@@ -46,7 +46,7 @@ const MINATO = mk('nm', [
 
 // ミナトの棚は「陳列にこだわる」見本：区画と見出しの札・表紙を見せる本・紹介カード・本立て・平積み
 const MINATO_SECS = [
-  { id: 'm1', title: '殺し屋シリーズ', end: { mode: 'bookend', kind: 'brass' }, flat: [] },
+  { id: 'm1', title: '殺し屋シリーズ', end: { mode: 'bookend', kind: 'wood' }, flat: [] },
   { id: 'm2', title: 'まずはこの一冊', end: { mode: 'flat' }, flat: ['nm14', 'nm15'] },
   { id: 'm3', title: '仙台の街の話', end: { mode: 'lean' }, flat: [] },
 ];

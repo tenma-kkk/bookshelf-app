@@ -8,8 +8,13 @@
   color-scheme:light;
   /* 質感の素：しっくい・紙のざらつき（--noise）と、木目（--grainH 横向き／--grainV 縦向き） */
   --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grainH:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='60'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .35' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .18 0 0 0 0 .1 0 0 0 0 .03 1.1 0 0 0 -.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  --grainV:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.35 .006' numOctaves='3' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 .18 0 0 0 0 .1 0 0 0 0 .03 1.1 0 0 0 -.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grainH:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300'%3E%3Cfilter id='t' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.0015 .012' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .11 0 0 0 0 .04 .9 0 0 0 -.3'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.0025 .07' numOctaves='5' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .08 0 0 0 0 .02 1.8 0 0 0 -.72'/%3E%3C/filter%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.008 .5' numOctaves='2' seed='10' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .06 0 0 0 0 .02 1 0 0 0 -.42'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23t%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23g%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23f%29'/%3E%3C/svg%3E");
+  --grainV:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='600'%3E%3Cfilter id='t' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .0015' numOctaves='2' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .11 0 0 0 0 .04 .9 0 0 0 -.3'/%3E%3C/filter%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.07 .0025' numOctaves='5' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .08 0 0 0 0 .02 1.8 0 0 0 -.72'/%3E%3C/filter%3E%3Cfilter id='f' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5 .008' numOctaves='2' seed='6' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .06 0 0 0 0 .02 1 0 0 0 -.42'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23t%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23g%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23f%29'/%3E%3C/svg%3E");
+  /* 金属の光の帯の位置（app.js が動かす）と、磨いた真鍮 */
+  --gx:40%;
+  --brass:linear-gradient(100deg,#0000 calc(var(--gx) - 18%),#fff6d0b0 var(--gx),#0000 calc(var(--gx) + 18%)),repeating-linear-gradient(0deg,#ffffff12 0 1px,#0000 1px 2px),linear-gradient(#6b4d1a,#c39a48 30%,#f5dc95 50%,#c9a24a 64%,#7d5b22);
+  /* 大理石：うすい雲もようと、細い石のすじ */
+  --marble:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200'%3E%3Cfilter id='c' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.008' numOctaves='3' seed='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .78 0 0 0 0 .76 0 0 0 0 .72 0 0 0 .28 -.1'/%3E%3C/filter%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.011 .03' numOctaves='5' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .53 0 0 0 0 .5 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0 0 0 0 .3 0 0 0 0 0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Cfilter id='v' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.005 .014' numOctaves='6' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .41 0 0 0 0 .40 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0 0 0 .85 0 0 0 0 0'/%3E%3C/feComponentTransfer%3E%3CfeGaussianBlur stdDeviation='.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23f3f0ea'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23c%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23w%29'/%3E%3Crect width='100%25' height='100%25' filter='url%28%23v%29'/%3E%3C/svg%3E");
 }
 /* 夜の展示室：墨色。文字はすべて白 */
 .night{--wall:#2b2622;--wall-hi:#3b342d;--ceil:#171310;--ink:#f3ead8;--sub:#e8dfcc;--line:#ffffff40;--lightA:.10}
@@ -64,13 +69,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .plinth{height:calc(var(--fw)*.5);margin:0 calc(var(--fw)*-1);background-color:var(--frame);filter:brightness(.93)}
 /* 素材：木目・スチール・大理石の天板・真鍮 */
 /* 木目：側板と背板は縦、天板・棚板・いちばん下の板は横 */
-.case.grain,.case.grain .shelfRow{background-image:linear-gradient(#0000 60%,#ffffff10),var(--grainV)}
-.case.grain .crown,.case.grain .plinth{background-image:var(--grainH)}
-.case.grain .board{background-image:linear-gradient(#fff1,#0000 40%,#0002),var(--grainH)}
-.case.steel,.case.steel .crown,.case.steel .plinth,.case.steel .board{background-image:linear-gradient(90deg,#ffffff38,#0000 35%,#ffffff26 65%,#0000)}
-.case.top-marble .crown{background:linear-gradient(120deg,#f6f4f0 0%,#e2ddd5 28%,#f8f6f2 44%,#d5cfc6 62%,#f3f0eb 100%)}
-.case.brass .crown{box-shadow:inset 0 -2px 0 #c9a24a,0 2px 3px #0003}
-.case.brass .plinth{box-shadow:inset 0 2px 0 #c9a24a}
+/* 黒檀は木目の明るさをおさえて、ほぼ黒に（--wd） */
+.case.ebony{--wd:#000000a0}
+.case.grain,.case.grain .shelfRow{background-image:linear-gradient(var(--wd,#0000),var(--wd,#0000)),linear-gradient(#0000 60%,#ffffff10),var(--grainV)}
+.case.grain .crown,.case.grain .plinth{background-image:linear-gradient(var(--wd,#0000),var(--wd,#0000)),var(--grainH)}
+.case.grain .board{background-image:linear-gradient(#fff1,#0000 40%,#0002),linear-gradient(var(--wd,#0000),var(--wd,#0000)),var(--grainH)}
+/* 金属のつや：光の帯（--gx）が、スマホの傾き・指やマウスの動きで左右に動く */
+.case.steel{background-image:linear-gradient(100deg,#0000 calc(var(--gx) - 24%),#ffffff24 var(--gx),#0000 calc(var(--gx) + 24%)),repeating-linear-gradient(90deg,#ffffff0a 0 1px,#0000 1px 2px,#00000018 2px 3px)}
+.case.steel .crown,.case.steel .plinth,.case.steel .board{background-image:linear-gradient(100deg,#0000 calc(var(--gx) - 22%),#ffffff40 var(--gx),#0000 calc(var(--gx) + 22%)),repeating-linear-gradient(0deg,#ffffff0c 0 1px,#0000 1px 2px,#0000001c 2px 3px),linear-gradient(#ffffff26,#0000 45%,#00000038)}
+.case.steel .shelfRow{background-image:linear-gradient(#0000 60%,#ffffff0d),repeating-linear-gradient(90deg,#ffffff06 0 1px,#0000 1px 3px)}
+/* 大理石の天板：石のすじ */
+.case.top-marble .crown{top:calc(var(--fw)*-.95);height:calc(var(--fw)*1.15);background:#f3f0ea var(--marble) 0 0/300px 100px;box-shadow:inset 0 1px 0 #fffc,inset 0 -1px 0 #0002,0 2px 3px #0004}
+/* 真鍮：天板の下・棚板の前・いちばん下の板の上に、磨いた真鍮の帯 */
+.case.brass .crown::after,.case.brass .board::before,.case.brass .plinth::before{content:"";position:absolute;left:0;right:0;background:var(--brass);box-shadow:0 1px 1px #0004}
+.case.brass .crown::after{bottom:0;height:max(1.5px,24%)}
+.case.brass .board::before{top:0;height:max(1.5px,38%);z-index:1}
+.case.brass .plinth{position:relative}
+.case.brass .plinth::before{top:0;height:max(1.5px,18%)}
 .bk{flex:0 0 auto;position:relative;border:none;padding:0;margin:0;border-radius:1px 2px 0 0;box-shadow:1px 0 2px #0006;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:transform .15s}
 /* 背表紙の丸み（両はしが暗い）と、紙のざらつき */
 .bk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.38),rgba(255,255,255,.14) 16%,rgba(255,255,255,.04) 40%,rgba(0,0,0,.06) 70%,rgba(0,0,0,.42));pointer-events:none}
@@ -85,7 +100,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .rehang .bk.lean{transform:none;margin-left:0}
 /* 本立て */
 .bookend{flex:none;position:relative;width:3px;height:58%;margin-left:2px;background:linear-gradient(90deg,#9aa0a6,#e3e6ea,#7a8087);box-shadow:2px 0 3px #0005}
-.bookend.brass{background:linear-gradient(90deg,#8a6a2a,#f0d27e,#9a7a35)}
 .bookend.black{background:linear-gradient(90deg,#111,#4a4a4a,#151515)}
 .bookend.wood{width:7px;height:64%;border-radius:2px 2px 0 0;background:#b48655;background-image:linear-gradient(90deg,#0003,#fff2 30%,#0000 60%,#0004),var(--grainV);box-shadow:2px 0 4px #0005}
 /* 段 × 区画のます目。区画どうしの間は本棚のわく（仕切り板）が見える */
