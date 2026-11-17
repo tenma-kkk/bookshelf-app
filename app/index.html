@@ -11,6 +11,50 @@
 <body>
 <canvas id="stage" aria-label="本屋の店内。指でなぞると棚が動きます"></canvas>
 <div id="root"></div>
+<!-- 本棚を撮る画面は、今の本屋と同じもの（js/capture.js が動かす） -->
+<div class="capture" id="capture" hidden>
+  <section class="cpPage" id="cp_intro">
+    <div class="cpTop"><span class="cpStep" id="cpStep"></span><button type="button" class="ic" id="cpClose" aria-label="やめる"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="cpBody"><h2 id="cpHead"></h2><p id="cpText"></p>
+      <p class="cpTips">コツ：正面から・明るい部屋で・手前に飛び出た本は奥へそろえる。写真はこのスマホの中だけで使います。</p>
+      <button type="button" class="pill main" id="cpGo"></button><p class="cpNote" id="cpNote" role="status"></p>
+      <button type="button" class="pill" id="cpSkip">ここで終わる</button></div>
+  </section>
+  <section class="cpCam" id="cp_cam" hidden>
+    <video id="cpVideo" playsinline muted autoplay></video>
+    <svg id="cpOv" aria-hidden="true"><path id="cpMask" fill="rgba(0,0,0,.55)" fill-rule="evenodd"/><g id="cpBrks"></g></svg>
+    <div class="cpCamTop"><span class="cpStep" id="cpCamStep"></span><span class="cpMsg" id="cpMsg"></span><span class="cpRot" id="cpRot" hidden>スマホを横向きにすると、大きくくっきり撮れます</span></div>
+    <div class="cpLevel" aria-hidden="true"><span id="cpBubble"></span></div>
+    <div class="cpChecks" id="cpChecks"><div data-k="sharp"><i></i>ピント</div><div data-k="light"><i></i>明るさ</div><div data-k="glare"><i></i>反射</div><div data-k="near"><i></i>近さ</div></div>
+    <div class="cpCamBot"><button type="button" id="cpCamBack">もどる</button>
+      <button type="button" class="cpShutter" id="cpShutter" aria-label="撮る"><svg viewBox="0 0 72 72"><circle id="cpArc" cx="36" cy="36" r="34" fill="none" stroke="#43c06d" stroke-width="5" stroke-dasharray="0 214" transform="rotate(-90 36 36)"/></svg></button><span></span></div>
+  </section>
+  <section class="cpPage" id="cp_all" hidden>
+    <div class="cpTop"><span class="cpStep">本棚全体</span></div>
+    <div class="cpBody"><h2>読み取った本棚</h2>
+      <canvas id="cpAllCv" class="cpPhoto"></canvas>
+      <div class="cpRowsBox"><span>段の数</span><div class="stepper"><button type="button" id="cpRowsMinus" aria-label="1段へらす">−</button><b id="cpRows"></b><button type="button" id="cpRowsPlus" aria-label="1段ふやす">＋</button></div></div>
+      <div class="cpColors"><span><i id="cpFrame"></i>わく</span><span><i id="cpInner"></i>中</span><button type="button" class="pill" id="cpUseColors">この色の本棚にする</button></div>
+      <button type="button" class="pill main" id="cpAllOk">1段目を撮る</button><button type="button" class="pill" id="cpAllRetake">撮り直す</button></div>
+  </section>
+  <section class="cpPage" id="cp_row" hidden>
+    <div class="cpTop"><span class="cpStep" id="cpRowHead"></span></div>
+    <div class="cpBody"><p class="cpCount" id="cpCount"></p>
+      <div class="cpFix"><div class="cpFixIn"><img id="cpRowImg" alt="撮った段（まっすぐに直したもの）"><svg id="cpLines" preserveAspectRatio="none"></svg></div></div>
+      <p class="cpTips">黄色の線が本と本の境目です。線のない所をタップすると増え、線をタップすると消えます。左右にスクロールできます。</p>
+      <div class="cpBtns"><button type="button" class="pill" id="cpReset">自動の線にもどす</button><button type="button" class="pill" id="cpRowRetake">撮り直す</button></div>
+      <button type="button" class="pill main" id="cpRowOk">本棚に入れる</button></div>
+  </section>
+  <section class="cpPage" id="cp_after" hidden>
+    <div class="cpTop"><span class="cpStep" id="cpAfterStep"></span></div>
+    <div class="cpBody"><h2 id="cpAfterHead"></h2>
+      <div class="cpFix"><div class="cpFixIn" id="cpAfterFix"><img id="cpAfterImg" alt="本棚に入れた段"><svg id="cpAfterMarks" preserveAspectRatio="none"></svg></div></div>
+      <p id="cpAfterText"></p>
+      <button type="button" class="pill main" id="cpBookGo"></button>
+      <button type="button" class="pill" id="cpBookLater"></button>
+      <p class="cpTips">あとでにしても、本をタップした画面の「近くで撮り直す」から、いつでも撮れます。</p></div>
+  </section>
+</div>
 <script type="module" src="./src/main.tsx"></script>
 </body>
 </html>

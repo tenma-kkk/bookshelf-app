@@ -6,7 +6,7 @@ import { Atlas, PX, UV, hash, plateCanvas } from './spines';
 import { MATERIALS, brassTextures, clamp, marbleTextures, texturesFor } from './textures';
 
 export interface ShelfStyle { mat: string; frame?: string; inner?: string; top?: string; brass?: boolean }
-export interface BookIn { id: string; title?: string; author?: string; format?: string; pages?: number; color?: string; w?: number; h?: number; img?: boolean; sample?: boolean }
+export interface BookIn { id: string; title?: string; author?: string; format?: string; pages?: number; color?: string; w?: number; h?: number; img?: boolean; sample?: boolean; record?: { gone?: string } }
 export interface ShelfIn { key: string; name: string; sample: boolean; own: boolean; books: BookIn[]; shelf: ShelfStyle; minRows: number; wide: number; sort?: string }
 
 export interface Item {
@@ -53,15 +53,15 @@ function roundBox(w: number, h: number, d: number, r: number, grain: 'x' | 'y', 
 // 本の形（原点＝背表紙の下のまん中）。番号 id を頂点に持たせる
 function bookGeometry(items: Item[], pagesUV: UV) {
   const P: number[] = [], Nn: number[] = [], U: number[] = [], C: number[] = [], I: number[] = [];
-  let id = 0;
+  let id = 0, dim = 1;
   const vert = (x: number, y: number, z: number, nx: number, ny: number, nz: number, u: number, v: number, k: number) => {
     const l = Math.hypot(nx, ny, nz);
-    P.push(x, y, z); Nn.push(nx / l, ny / l, nz / l); U.push(u, v); C.push(k, k, k); I.push(id);
+    P.push(x, y, z); Nn.push(nx / l, ny / l, nz / l); U.push(u, v); C.push(k * dim, k * dim, k * dim); I.push(id);
   };
   type V = [number, number, number, number, number, number, number, number, number];
   const quad = (a: V, b: V, c: V, d: V) => { for (const q of [a, b, c, a, c, d]) vert(...q); };
   for (const it of items) {
-    id = it.id;
+    id = it.id; dim = it.b.record?.gone ? .5 : 1;   // 手放して思い出に残した本は、少し暗く
     const { t, h, d } = it, { u0, v0, u1, v1 } = it.uv!, K = 6, bulge = Math.min(.0013, t * .09);
     const col = (s: number) => .56 + .44 * Math.pow(clamp(4.5 * Math.min(s, 1 - s)), .7);
     const f = (s: number) => bulge * (1 - (2 * s - 1) ** 2);

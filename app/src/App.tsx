@@ -5,6 +5,9 @@ import { PRESETS } from '../../js/design.js';
 import { NEIGHBORS } from '../../js/neighbors.js';
 import type { ShelfIn } from './shelf';
 import { World } from './world';
+import { openCapture, initCapture } from '../../js/capture.js';
+import { AddMenu, BookCard, ImportSheet, ScanSheet } from './sheets';
+import './capture.css';
 
 const OWN_NAME = 'わたしの棚';
 
@@ -31,6 +34,9 @@ export function App() {
   const [preset, setPreset] = useState<string>(() => (store.getState() as any).shelf.preset || 'mine');
   const [busy, setBusy] = useState(false);
   const quiet = useRef(false);
+  const [sheet, setSheet] = useState<null | 'menu' | 'scan' | 'import' | { book: string }>(null);
+  const [toast, setToast] = useState('');
+  const pending = useRef(false);
   const sort = (store.getState() as any).sort || 'manual';
 
   useEffect(() => {
@@ -46,6 +52,7 @@ export function App() {
       const w = new World(document.getElementById('stage') as HTMLCanvasElement, {
         shelf: i => setCur(i),
         fps: t => setFps(t),
+        tap: b => setSheet({ book: b.id }),
         moved: (s, held) => {
           // 並べ替えた結果を、今のアプリと同じ保存場所に書く
           const order = s.order, i = order.indexOf(held);
@@ -60,6 +67,7 @@ export function App() {
       if (!alive) return;
       world.current = w; setReady(true);
     })().catch(e => { console.error(e); setFps('3Dを表示できませんでした'); });
+    initCapture();
     store.onChange(() => { if (!quiet.current) setCount((store.getState() as any).books.length); });
     return () => { alive = false; };
   }, []);
@@ -83,6 +91,20 @@ export function App() {
     setCount((store.getState() as any).books.length); setBusy(false);
   };
 
+  // 棚の本が変わったら、自分の棚だけ組み立て直す
+  const refresh = async (note?: string) => {
+    pending.current = false;
+    if (!world.current) return;
+    setBusy(true);
+    try { await world.current.replaceShelf(OWN, ownShelf()); } finally { setBusy(false); }
+    setCount((store.getState() as any).books.length);
+    if (note) { setToast(note); setTimeout(() => setToast(''), 3200); }
+  };
+  const pickWay = (k: 'scan' | 'spine' | 'import') => {
+    if (k === 'spine') { setSheet(null); openCapture((added: number) => { if (added) refresh(`${added}冊を棚に置きました`); }); return; }
+    setSheet(k);
+  };
+
   const own = cur === OWN;
   const name = cur === OWN ? OWN_NAME : (LIST[cur] as ShelfIn | null)?.name;
   return (
@@ -100,28 +122,37 @@ export function App() {
       {ready && own && count === 0 && (
         <section className="empty">
           <h2>まだ本がありません</h2>
-          <p>本の登録は、今の本屋の画面からできます。<br />まずは見本の本で試すこともできます。</p>
-          <button className="primary" onClick={samples} disabled={busy}>見本の本を並べてみる</button>
-          <a className="secondary" href="../">今の本屋で本を登録する</a>
+          <p>持っている紙の本を、バーコードか背表紙を撮って並べましょう。<br />まずは見本の本で試すこともできます。</p>
+          <button className="primary" onClick={() => setSheet('menu')} disabled={busy}>本を足す</button>
+          <button className="secondary" onClick={samples} disabled={busy}>見本の本を並べてみる</button>
         </section>
       )}
 
       <section className="dock" aria-label={name}>
         {own ? (
           <>
+            <div className="dockRow">
+            <button className="add" onClick={() => setSheet('menu')} disabled={!ready || busy}>＋ 本を足す</button>
             <div className="chips" role="group" aria-label="本棚の素材">
               {Object.entries(PRESETS as Record<string, any>).map(([k, p]) => (
                 <button key={k} aria-pressed={preset === k} onClick={() => choose(k)} disabled={busy}>{p.name}</button>
               ))}
             </div>
+            </div>
             <p className="hint">{sort === 'manual'
-              ? '本を長押しして動かすと、並べ替えられます。左右にスワイプすると、となりの棚へ。'
+              ? '本をタップすると題名を直したり「手放した」にでき、長押しで並べ替えられます。左右にスワイプすると、となりの棚へ。'
               : '並べる順が「作家順」「色順」のときは、並べ替えできません。左右にスワイプすると、となりの棚へ。'}</p>
           </>
         ) : (
           <p className="hint">{name}（見本）です。左右にスワイプすると、となりの棚へ。</p>
         )}
       </section>
+      {sheet === 'menu' && <AddMenu onPick={pickWay} onClose={() => setSheet(null)} />}
+      {sheet === 'scan' && <ScanSheet onAdded={() => { pending.current = true; }}
+        onClose={() => { setSheet(null); if (pending.current) refresh(); }} />}
+      {sheet === 'import' && <ImportSheet onAdded={n => { setSheet(null); if (n) refresh(`${n}冊を棚に置きました`); }} onClose={() => setSheet(null)} />}
+      {sheet && typeof sheet === 'object' && <BookCard id={sheet.book} onChanged={() => refresh()} onClose={() => setSheet(null)} />}
+      {toast && <div className="toast" role="status">{toast}</div>}
       {busy && <div className="busy">準備しています</div>}
       {!ready && <div className="wait">本を並べています</div>}
     </>

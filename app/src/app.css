@@ -40,7 +40,53 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--brass); outline
 .empty p { margin: 0; font-size: 13px; line-height: 1.8; color: #6f6355 }
 .primary, .secondary { display: block; padding: 13px; border-radius: 999px; font-size: 15px; text-decoration: none; cursor: pointer }
 .primary { border: 0; background: #2a2622; color: #f5efe4 }
-.secondary { border: 1px solid #cfc6b8; color: #2a211a }
+.secondary { border: 1px solid #cfc6b8; color: #2a211a; background: none }
 
 .busy { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 4; background: var(--panel); padding: 8px 14px; border-radius: 6px; font-size: 13px }
 .wait { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: var(--ink); font: 600 16px/1.6 var(--mincho); letter-spacing: .1em }
+
+/* ---- 本を足す・本の札（2回目） ---- */
+.dockRow { display: flex; gap: 8px; align-items: center; min-width: 0 }
+.dockRow .chips { flex: 1; min-width: 0 }
+.add { flex: none; padding: 8px 14px; border: 0; border-radius: 999px; background: var(--brass); color: #1d1710; font-size: 13px; font-weight: 700; cursor: pointer }
+.add:disabled { opacity: .5 }
+.sheet { position: fixed; inset: 0; z-index: 10; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 8, 6, .5) }
+.sheet.full { display: block; background: #000 }
+.card { color-scheme: light; width: min(480px, 100%); box-sizing: border-box; max-height: 92vh; overflow-y: auto; display: grid; gap: 12px; align-content: start;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(16px, env(safe-area-inset-left, 0px));
+  background: #faf7f0; color: #2a211a; border-radius: 14px 14px 0 0 }
+.card.tall { min-height: 70vh }
+.cardTop { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px }
+.card h2 { margin: 0; font: 800 19px/1.4 var(--mincho); letter-spacing: .06em }
+.x { flex: none; width: 36px; height: 36px; border: 1px solid #d9d0c2; border-radius: 50%; background: none; font-size: 20px; line-height: 1; cursor: pointer }
+.lead { margin: 0; font-size: 13px; line-height: 1.8; color: #6f6355 }
+.note { margin: 0; font-size: 13px; line-height: 1.7; color: #a34b38 }
+.way { display: grid; gap: 2px; text-align: left; padding: 14px 16px; border: 1px solid #d9d0c2; border-radius: 10px; background: #fff; cursor: pointer }
+.way b { font-size: 15px } .way small { font-size: 12px; color: #6f6355; line-height: 1.6 }
+.card .secondary { background: none; text-align: center }
+.primary:disabled { opacity: .4; cursor: default }
+.field { display: grid; gap: 4px; font-size: 12px; color: #6f6355 }
+.field input, .meta select { font: inherit; font-size: 16px; color: #2a211a; padding: 10px 12px; border: 1px solid #cfc6b8; border-radius: 8px; background: #fff }
+.meta select { font-size: 14px; padding: 4px 8px }
+.meta { margin: 0; display: grid; gap: 6px; font-size: 13px }
+.meta div { display: grid; grid-template-columns: 4em 1fr; align-items: center }
+.meta dt { color: #6f6355 } .meta dd { margin: 0 } .meta small { color: #a34b38 }
+.file { position: relative; text-align: center; overflow: hidden }
+.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer }
+.chips.light button { border-color: #d9d0c2; color: #2a211a }
+.chips.light button[aria-pressed=true] { border-color: #2a2622; background: #2a2622; color: #f5efe4 }
+.picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 46vh; overflow-y: auto }
+.picks label { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid #e3dbcf; border-radius: 8px; background: #fff; cursor: pointer }
+.picks label.has { opacity: .5; cursor: default }
+.picks input { width: 20px; height: 20px; margin: 2px 0 0; flex: none }
+.picks span { display: grid; gap: 2px; min-width: 0 } .picks b { font-size: 14px; font-weight: 700 } .picks small { font-size: 12px; color: #6f6355 }
+.picks .none { font-size: 13px; color: #6f6355; padding: 12px }
+.scan { position: absolute; inset: 0 }
+.scan video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
+.scanFrame { position: absolute; left: 10%; right: 10%; top: 32%; height: 18%; border: 3px solid #fff; border-radius: 10px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45) }
+.scanTop { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 13px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)) }
+.done { border: 1px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .5); border-radius: 999px; padding: 8px 16px; cursor: pointer }
+.scanMsg { position: absolute; left: 16px; right: 16px; top: 54%; margin: 0; text-align: center; color: #fff; font-size: 14px; line-height: 1.7 }
+.found { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 60px); transform: translateX(-50%); z-index: 6; background: var(--panel); padding: 8px 16px; border-radius: 999px; font-size: 13px; white-space: nowrap }

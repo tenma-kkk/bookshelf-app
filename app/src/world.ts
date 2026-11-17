@@ -1,12 +1,13 @@
 // 店内（壁・照明・カメラ）と指の操作。本棚を左右に並べ、1台ずつ見て回る
 import * as THREE from 'three';
-import { FRONT, Item, Shelf, ShelfIn, ShelfStyle } from './shelf';
+import { BookIn, FRONT, Item, Shelf, ShelfIn, ShelfStyle } from './shelf';
 import { clamp, wallTextures } from './textures';
 
 export interface WorldEvents {
   shelf: (index: number) => void;
   fps: (text: string) => void;
   moved: (shelf: Shelf, held: Item) => void;
+  tap?: (book: BookIn) => void;
 }
 
 const SPACING_PAD = 1.5; // となりの棚が画面に入らない間隔（m）
@@ -160,14 +161,14 @@ export class World {
   private panning = false;
   private bindInput() {
     const c = this.canvas, pts = new Map<number, [number, number]>();
-    let pinch = 0, lastT = 0, press = 0, pressAt: [number, number] = [0, 0];
+    let pinch = 0, lastT = 0, press = 0, pressAt: [number, number] = [0, 0], downAt = 0, moved = false, many = false;
     const stopPress = () => { clearTimeout(press); press = 0; };
     c.addEventListener('contextmenu', e => e.preventDefault());
     c.addEventListener('pointerdown', e => {
       c.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
       this.vel.x = this.vel.y = 0; this.go = null; pinch = 0; this.moveHand(e.clientX, e.clientY); stopPress();
       if (pts.size === 1 && !this.drag) {
-        pressAt = [e.clientX, e.clientY];
+        pressAt = [e.clientX, e.clientY]; downAt = performance.now(); moved = false; many = false;
         press = window.setTimeout(() => { press = 0; this.startDrag(e.pointerId, pts.get(e.pointerId)); }, 350);
       }
     });
@@ -176,7 +177,8 @@ export class World {
       const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
       pts.set(e.pointerId, [e.clientX, e.clientY]);
       if (this.drag) { if (e.pointerId === this.drag.id) { this.drag.x = e.clientX; this.drag.y = e.clientY; this.moveHand(e.clientX, e.clientY); } return; }
-      if (press && Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > 8) stopPress();
+      if (Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > 8) { moved = true; stopPress(); }
+      if (pts.size > 1) many = true;
       if (pts.size === 1) {
         const k = this.view.w / this.W; this.view.x -= dx * k; this.view.y += dy * k; this.panning = true;
         const now = performance.now(), dt = Math.max(8, now - lastT); lastT = now;
@@ -190,8 +192,10 @@ export class World {
       this.dirty = true;
     });
     const up = (e: PointerEvent) => {
-      pts.delete(e.pointerId); pinch = 0; stopPress();
+      const short = !!press; pts.delete(e.pointerId); pinch = 0; stopPress();
       if (this.drag && e.pointerId === this.drag.id) { this.endDrag(); return; }
+      // 軽くタップしたときは、その本を知らせる（自分の棚だけ）
+      if (short && !moved && !many && !pts.size && e.type === 'pointerup' && performance.now() - downAt < 350) { this.panning = false; this.tapAt(e.clientX, e.clientY); return; }
       if (!pts.size && this.panning) { this.panning = false; this.release(); }
     };
     c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
@@ -219,6 +223,12 @@ export class World {
     this.ray.set(cx / this.W * 2 - 1, -(cy / this.H * 2 - 1), .5).unproject(this.camera).sub(this.camera.position);
     const t = (z - this.camera.position.z) / this.ray.z;
     return { x: this.camera.position.x + this.ray.x * t, y: this.camera.position.y + this.ray.y * t };
+  }
+  private tapAt(cx: number, cy: number) {
+    const s = this.shelves[this.cur];
+    if (!s || !s.cfg.own || !this.ev.tap) return;
+    const p = this.worldAt(cx, cy, FRONT - .024), it = s.pick(p.x - s.cx, p.y);
+    if (it) this.ev.tap(it.b);
   }
   private startDrag(id: number, q?: [number, number]) {
     const s = this.shelves[this.cur];
